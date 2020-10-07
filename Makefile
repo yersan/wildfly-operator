@@ -33,6 +33,7 @@ codegen: setup
 	which ./openapi-gen > /dev/null || go build -o ./openapi-gen k8s.io/kube-openapi/cmd/openapi-gen
 	./openapi-gen --logtostderr=true -o "" -i ./pkg/apis/wildfly/v1alpha1 -O zz_generated.openapi -p ./pkg/apis/wildfly/v1alpha1 -h ./hack/boilerplate.go.txt -r "-"
 	./openapi-gen --logtostderr=true -o "" -i ./pkg/apis/wildfly/v1alpha2 -O zz_generated.openapi -p ./pkg/apis/wildfly/v1alpha2 -h ./hack/boilerplate.go.txt -r "-"
+	cat ./deploy/crds/wildfly.org_wildflyservers_crd.yaml ./deploy/crds/conversion_webhook_template.yaml > ./deploy/crds/wildfly.org_wildflyservers_crd_with_webhook.yaml
 
 ## build                 Compile and build the WildFly operator.
 build: tidy unit-test
@@ -62,7 +63,7 @@ run-openshift:
 run-local-operator: codegen build
 	echo "Deploy WildFlyServer CRD on Kubernetes"
 	kubectl apply -f deploy/crds/wildfly_v1alpha1_wildflyserver_crd.yaml
-	JBOSS_HOME=/wildfly OPERATOR_NAME=wildfly-operator ./operator-sdk run --local --operator-namespace=default
+	ENABLE_WEBHOOKS=false JBOSS_HOME=/wildfly OPERATOR_NAME=wildfly-operator ./operator-sdk run --local --operator-namespace=default
 
 ## test                  Perform all tests.
 test: unit-test scorecard test-e2e
