@@ -9,9 +9,8 @@ require (
 	k8s.io/api v0.19.2
 	k8s.io/apimachinery v0.19.2
 	k8s.io/client-go v0.19.2
+	k8s.io/kube-openapi v0.0.0-20200805222855-6aeccd4b50c6 // indirect
 	sigs.k8s.io/controller-runtime v0.7.0
 )
 
-replace (
-	k8s.io/client-go => k8s.io/client-go v0.19.2
-)
+replace k8s.io/client-go => k8s.io/client-go v0.19.2

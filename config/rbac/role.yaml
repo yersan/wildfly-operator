@@ -1,0 +1,34 @@
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  creationTimestamp: null
+  name: manager-role
+rules:
+- apiGroups:
+  - wildfly.org
+  resources:
+  - wildflyservers
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - wildfly.org
+  resources:
+  - wildflyservers/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - wildfly.org
+  resources:
+  - wildflyservers/status
+  verbs:
+  - get
+  - patch
+  - update
