@@ -1,8 +1,0 @@
-apiVersion: wildfly.org/v1alpha1
-kind: WildFlyServer
-metadata:
-  name: quickstart-bootable-jar
-spec:
-  applicationImage: "quay.io/wildfly-quickstarts/wildfly-operator-quickstart:bootable-21.0"
-  replicas: 2
-  bootableJar: true
