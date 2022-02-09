@@ -40,11 +40,8 @@ import (
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/record"
 	"os"
-	"sigs.k8s.io/controller-runtime/pkg/controller"
-	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
-	"sigs.k8s.io/controller-runtime/pkg/source"
 	"strconv"
 	"strings"
 
@@ -289,47 +286,26 @@ func (r *WildFlyServerReconciler) Reconcile(ctx context.Context, request ctrl.Re
 	// requeue the reconcile loop if pod status changed, or the recovery/statefulset asked to reconcile later
 	requeue := reconcileStatus || reconcileRecovery >= requeueLater || reconcileStatefulSet >= requeueLater
 	return reconcile.Result{Requeue: requeue}, nil
-
-	return ctrl.Result{}, nil
 }
 
 // SetupWithManager sets up the controller with the Manager.
 func (r *WildFlyServerReconciler) SetupWithManager(mgr ctrl.Manager) error {
-	// Create a new controller
-	c, err := controller.New(controllerName, mgr, controller.Options{Reconciler: r})
-	if err != nil {
-		return err
-	}
+	builder := ctrl.NewControllerManagedBy(mgr).
+		For(&wildflyv1alpha1.WildFlyServer{})
 
-	// Watch for changes to primary resource WildFlyServer
-	err = c.Watch(&source.Kind{Type: &wildflyv1alpha1.WildFlyServer{}}, &handler.EnqueueRequestForObject{})
-	if err != nil {
-		return err
-	}
+	builder.Owns(&appsv1.StatefulSet{}).
+		Owns(&corev1.Service{})
 
-	// Watch for changes to secondary resources and requeue the owner WildFlyServer
-	enqueueRequestForOwner := handler.EnqueueRequestForOwner{
-		IsController: true,
-		OwnerType:    &wildflyv1alpha1.WildFlyServer{},
-	}
-	for _, obj := range []client.Object{&appsv1.StatefulSet{}, &corev1.Service{}} {
-		if err = c.Watch(&source.Kind{Type: obj}, &enqueueRequestForOwner); err != nil {
-			return err
-		}
-	}
 	if hasServiceMonitor() {
-		if err = c.Watch(&source.Kind{Type: &monitoringv1.ServiceMonitor{}}, &enqueueRequestForOwner); err != nil {
-			return err
-		}
+		builder.Owns(&monitoringv1.ServiceMonitor{})
 	}
 
 	// watch for Route only on OpenShift
 	if isOpenShift(mgr.GetConfig()) {
-		if err = c.Watch(&source.Kind{Type: &routev1.Route{}}, &enqueueRequestForOwner); err != nil {
-			return err
-		}
+		builder.Owns(&routev1.Route{})
 	}
-	return nil
+
+	return builder.Complete(r)
 }
 
 // checkStatefulSet checks if the statefulset is up to date with the current WildFlyServerSpec.
