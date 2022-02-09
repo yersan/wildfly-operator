@@ -36,6 +36,10 @@ import (
 	// +kubebuilder:scaffold:imports
 )
 
+const (
+	controllerName = "wildflyserver-controller"
+)
+
 var (
 	scheme   = runtime.NewScheme()
 	setupLog = ctrl.Log.WithName("setup")
@@ -79,17 +83,10 @@ func main() {
 	}
 
 	if err = (&controllers.WildFlyServerReconciler{
-		Client: mgr.GetClient(),
-		Log:    ctrl.Log.WithName("controllers").WithName("WildFlyServer"),
-		Scheme: mgr.GetScheme(),
-	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "WildFlyServer")
-		os.Exit(1)
-	}
-	if err = (&controllers.WildFlyServerReconciler{
-		Client: mgr.GetClient(),
-		Log:    ctrl.Log.WithName("controllers").WithName("WildFlyServer"),
-		Scheme: mgr.GetScheme(),
+		Client:   mgr.GetClient(),
+		Log:      ctrl.Log.WithName("controllers").WithName("WildFlyServer"),
+		Scheme:   mgr.GetScheme(),
+		Recorder: mgr.GetEventRecorderFor(controllerName),
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "WildFlyServer")
 		os.Exit(1)
