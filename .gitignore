@@ -11,6 +11,9 @@ testbin/*
 # Output of the go coverage tool, specifically when used with LiteIDE
 cover.out
 
+# Auto generated files
+bin/*
+
 # Created by https://www.gitignore.io/api/go,vim,emacs,visualstudiocode
 ### Emacs ###
 # -*- mode: gitignore; -*-
