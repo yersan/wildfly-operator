@@ -14,6 +14,8 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"regexp"
+	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 	"strings"
 	"testing"
 	"time"
@@ -75,6 +77,7 @@ var (
 
 func setupBeforeScaleDown(t *testing.T, wildflyServer *wildflyv1alpha1.WildFlyServer, expectedReplicaSize int32) {
 	// Set the logger to development mode for verbose logs.
+	ctrl.SetLogger(zap.New(zap.UseDevMode(true)))
 	assert = testifyAssert.New(t)
 
 	// Objects to track in the fake client.
@@ -86,9 +89,14 @@ func setupBeforeScaleDown(t *testing.T, wildflyServer *wildflyv1alpha1.WildFlySe
 	s := scheme.Scheme
 	s.AddKnownTypes(wildflyv1alpha1.GroupVersion, wildflyServer)
 	// Create a fake client to mock API calls.
-	cl = fake.NewFakeClientWithScheme(s, objs...)
+	cl = fake.NewClientBuilder().WithScheme(s).WithRuntimeObjects(objs...).Build()
 	// Create a WildFlyServerReconciler object with the scheme and fake client.
-	r = &WildFlyServerReconciler{Client: cl, Scheme: s, Recorder: eventRecorderMock{}, isOpenShift: false}
+	r = &WildFlyServerReconciler{Client: cl,
+		Scheme:      s,
+		Recorder:    eventRecorderMock{},
+		isOpenShift: false,
+		Log:         ctrl.Log.WithName("test").WithName("transaction"),
+	}
 
 	// Statefulset will be created
 	_, err := r.Reconcile(context.TODO(), req)

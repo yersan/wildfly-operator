@@ -21,6 +21,7 @@ import (
 	"errors"
 	"fmt"
 	openshiftutils "github.com/RHsyseng/operator-utils/pkg/utils/openshift"
+	"github.com/go-logr/logr"
 	routev1 "github.com/openshift/api/route/v1"
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	wildflyutil "github.com/wildfly/wildfly-operator/pkg/util"
@@ -45,7 +46,6 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/go-logr/logr"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -84,9 +84,9 @@ type WildFlyServerReconciler struct {
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.7.0/pkg/reconcile
 func (r *WildFlyServerReconciler) Reconcile(ctx context.Context, request ctrl.Request) (ctrl.Result, error) {
-	reqLogger := r.Log.WithValues("wildflyserver", request.NamespacedName)
+	log := r.Log.WithValues("name", request.NamespacedName)
 
-	reqLogger.Info("Reconciling WildFlyServer")
+	log.Info("Reconciling WildFlyServer")
 
 	// Fetch the WildFlyServer instance
 	wildflyServer := &wildflyv1alpha1.WildFlyServer{}
@@ -125,7 +125,7 @@ func (r *WildFlyServerReconciler) Reconcile(ctx context.Context, request ctrl.Re
 	// List of pods which belongs under this WildflyServer instance
 	podList, err := GetPodsForWildFly(r, wildflyServer)
 	if err != nil {
-		reqLogger.Error(err, "Failed to list pods.", "WildFlyServer.Namespace", wildflyServer.Namespace, "WildFlyServer.Name", wildflyServer.Name)
+		log.Error(err, "Failed to list pods.", "WildFlyServer.Namespace", wildflyServer.Namespace, "WildFlyServer.Name", wildflyServer.Name)
 		return reconcile.Result{}, err
 	}
 	wildflyServerSpecSize := wildflyServer.Spec.Replicas
@@ -136,31 +136,31 @@ func (r *WildFlyServerReconciler) Reconcile(ctx context.Context, request ctrl.Re
 	// if the number of desired replica size (aka. WildflyServer.Spec.Replicas) is different from the number of active pods
 	//  and the statefulset replica size was already changed to follow the value defined by the wildflyserver spec then wait for sts to reconcile
 	if statefulsetSpecSize == wildflyServerSpecSize && numberOfDeployedPods != wildflyServerSpecSize {
-		reqLogger.Info("Number of pods does not match the WildFlyServer specification. Waiting to get numbers in sync.",
+		log.Info("Number of pods does not match the WildFlyServer specification. Waiting to get numbers in sync.",
 			"WildflyServer specification", wildflyServer.Name, "Expected number of pods", wildflyServerSpecSize, "Number of deployed pods", numberOfDeployedPods,
 			"StatefulSet spec size", statefulsetSpecSize)
 		return reconcile.Result{Requeue: true}, nil
 	}
 	// the recovers scaledown process requires all pods will be active and running otherwise it's not able to clean them
 	if numberOfDeployedPods < statefulsetSpecSize {
-		reqLogger.Info("Number of pods is lower than the StatefulSet replica size. Waiting to get number in sync.",
+		log.Info("Number of pods is lower than the StatefulSet replica size. Waiting to get number in sync.",
 			"Number of deployed pods", numberOfDeployedPods, "StatefulSet spec size", statefulsetSpecSize)
 		return reconcile.Result{Requeue: true}, nil
 	}
 
 	// Processing scaled down
 	//   updating scaling-down pods for not being requests through loadbalancer
-	updated, err := r.setLabelAsDisabled(wildflyServer, reqLogger, resources.MarkerOperatedByLoadbalancer, int(numberOfPodsToScaleDown), podList)
+	updated, err := r.setLabelAsDisabled(wildflyServer, log, resources.MarkerOperatedByLoadbalancer, int(numberOfPodsToScaleDown), podList)
 	if updated || err != nil { // labels were updated (updated == true) or some error occured (err != nil)
 		return reconcile.Result{Requeue: updated}, err
 	}
 	// Processing recovery on pods which are planned to be removed because of scale down is in progress now
-	reconcileRecovery, err := r.processTransactionRecoveryScaleDown(reqLogger, wildflyServer, int(numberOfPodsToScaleDown), podList)
+	reconcileRecovery, err := r.processTransactionRecoveryScaleDown(log, wildflyServer, int(numberOfPodsToScaleDown), podList)
 	if reconcileRecovery == requeueNow { // server state was updated (or/and some error could happen), we need to reconcile
 		return reconcile.Result{Requeue: true}, err
 	}
 	if err != nil {
-		reqLogger.Error(err, "Failures during scaling down recovery processing", "Desired replica size", wildflyServerSpecSize,
+		log.Error(err, "Failures during scaling down recovery processing", "Desired replica size", wildflyServerSpecSize,
 			"Number of pods to be removed", numberOfPodsToScaleDown)
 	}
 
@@ -230,14 +230,14 @@ func (r *WildFlyServerReconciler) Reconcile(ctx context.Context, request ctrl.Re
 			if !reflect.DeepEqual(hosts, wildflyServer.Status.Hosts) {
 				updateWildflyServer = true
 				wildflyServer.Status.Hosts = hosts
-				reqLogger.Info("Updating hosts", "WildFlyServer", wildflyServer.Name, "WildflyServer hosts", wildflyServer.Status.Hosts)
+				log.Info("Updating hosts", "WildFlyServer", wildflyServer.Name, "WildflyServer hosts", wildflyServer.Status.Hosts)
 			}
 		} else {
 			// if HTTP routes have been disabled, remove the hosts field from the status
 			if len(wildflyServer.Status.Hosts) > 0 {
 				updateWildflyServer = true
 				wildflyServer.Status.Hosts = nil
-				reqLogger.Info("Removing hosts", "WildFlyServer", wildflyServer.Name)
+				log.Info("Removing hosts", "WildFlyServer", wildflyServer.Name)
 			}
 		}
 	}
@@ -267,7 +267,7 @@ func (r *WildFlyServerReconciler) Reconcile(ctx context.Context, request ctrl.Re
 	if !reflect.DeepEqual(podsStatus, wildflyServer.Status.Pods) {
 		updateWildflyServer = true
 		wildflyServer.Status.Pods = podsStatus
-		reqLogger.Info("Updating the pod status with new status", "Pod statuses", podsStatus)
+		log.Info("Updating the pod status with new status", "Pod statuses", podsStatus)
 	}
 
 	if wildflyServer.Status.Replicas != statefulSet.Status.Replicas {
@@ -277,7 +277,7 @@ func (r *WildFlyServerReconciler) Reconcile(ctx context.Context, request ctrl.Re
 
 	if updateWildflyServer {
 		if err := resources.UpdateWildFlyServerStatus(wildflyServer, r.Client); err != nil {
-			reqLogger.Error(err, "Failed to update WildFlyServer status.")
+			log.Error(err, "Failed to update WildFlyServer status.")
 			return reconcile.Result{}, err
 		}
 		reconcileStatus = true
@@ -313,6 +313,8 @@ func (r *WildFlyServerReconciler) SetupWithManager(mgr ctrl.Manager) error {
 // A non-nil error if an error happens while updating/deleting the statefulset.
 func (r *WildFlyServerReconciler) checkStatefulSet(wildflyServer *wildflyv1alpha1.WildFlyServer, foundStatefulSet *appsv1.StatefulSet,
 	podList *corev1.PodList) (mustReconcile int, err error) {
+	log := log.FromContext(context.TODO())
+
 	var update bool
 	var requeue = requeueOff
 	// Ensure the statefulset replicas is up to date (driven by scaledown processing)
@@ -320,14 +322,14 @@ func (r *WildFlyServerReconciler) checkStatefulSet(wildflyServer *wildflyv1alpha
 	desiredStatefulSetReplicaSize := wildflyServerSpecSize
 	// - for scale up
 	if wildflyServerSpecSize > *foundStatefulSet.Spec.Replicas {
-		r.Log.Info("Scaling up and updating replica size to "+strconv.Itoa(int(wildflyServerSpecSize)),
+		log.Info("Scaling up and updating replica size to "+strconv.Itoa(int(wildflyServerSpecSize)),
 			"StatefulSet.Namespace", foundStatefulSet.Namespace, "StatefulSet.Name", foundStatefulSet.Name)
 		foundStatefulSet.Spec.Replicas = &desiredStatefulSetReplicaSize
 		update = true
 	}
 	// - for scale down
 	if wildflyServerSpecSize < *foundStatefulSet.Spec.Replicas {
-		r.Log.Info("For statefulset scaling down need to verify if pods were cleaned by recovery",
+		log.Info("For statefulset scaling down need to verify if pods were cleaned by recovery",
 			"StatefulSet.Namespace", foundStatefulSet.Namespace, "StatefulSet.Name", foundStatefulSet.Name)
 		// Change the number of replicas in statefulset, changing based on the pod state
 		nameToPodState := make(map[string]string)
@@ -354,14 +356,14 @@ func (r *WildFlyServerReconciler) checkStatefulSet(wildflyServer *wildflyv1alpha
 		calculatedStatefulSetReplicaSize := int32(numberOfPods - numberOfPodsToShutdown)
 		desiredStatefulSetReplicaSize = calculatedStatefulSetReplicaSize
 		if wildflyServerSpecSize <= calculatedStatefulSetReplicaSize && *foundStatefulSet.Spec.Replicas > calculatedStatefulSetReplicaSize {
-			r.Log.Info("Scaling down and updating replica size to "+strconv.Itoa(int(calculatedStatefulSetReplicaSize)),
+			log.Info("Scaling down and updating replica size to "+strconv.Itoa(int(calculatedStatefulSetReplicaSize)),
 				"StatefulSet.Namespace", foundStatefulSet.Namespace, "StatefulSet.Name", foundStatefulSet.Name)
 			foundStatefulSet.Spec.Replicas = &desiredStatefulSetReplicaSize
 			update = true
 		}
 		// There are some unclean pods which can't be scaled down
 		if wildflyServerSpecSize < calculatedStatefulSetReplicaSize {
-			r.Log.Info("Statefulset was not scaled to the desired replica size "+strconv.Itoa(int(wildflyServerSpecSize))+
+			log.Info("Statefulset was not scaled to the desired replica size "+strconv.Itoa(int(wildflyServerSpecSize))+
 				" (current StatefulSet size: "+strconv.Itoa(int(calculatedStatefulSetReplicaSize))+
 				"). Transaction recovery scaledown process has not cleaned all pods. Please, check status of the WildflyServer "+wildflyServer.Name,
 				"StatefulSet.Namespace", foundStatefulSet.Namespace, "StatefulSet.Name", foundStatefulSet.Name)
@@ -399,10 +401,10 @@ func (r *WildFlyServerReconciler) checkStatefulSet(wildflyServer *wildflyv1alpha
 		if delete {
 			// VolumeClaimTemplates has changed, the statefulset can not be updated and must be deleted
 			if err = resources.Delete(wildflyServer, r.Client, foundStatefulSet); err != nil {
-				r.Log.Error(err, "Failed to Delete StatefulSet.", "StatefulSet.Namespace", foundStatefulSet.Namespace, "StatefulSet.Name", foundStatefulSet.Name)
+				log.Error(err, "Failed to Delete StatefulSet.", "StatefulSet.Namespace", foundStatefulSet.Namespace, "StatefulSet.Name", foundStatefulSet.Name)
 				return requeueNow, err
 			}
-			r.Log.Info("Deleting StatefulSet that is not up to date with the WildFlyServer StorageSpec", "StatefulSet.Namespace", foundStatefulSet.Namespace, "StatefulSet.Name", foundStatefulSet.Name)
+			log.Info("Deleting StatefulSet that is not up to date with the WildFlyServer StorageSpec", "StatefulSet.Namespace", foundStatefulSet.Namespace, "StatefulSet.Name", foundStatefulSet.Name)
 			return requeueNow, nil
 		}
 
@@ -411,17 +413,17 @@ func (r *WildFlyServerReconciler) checkStatefulSet(wildflyServer *wildflyv1alpha
 		foundStatefulSet.Spec.Replicas = &desiredStatefulSetReplicaSize
 		foundStatefulSet.Annotations[resources.MarkerServerGeneration] = strconv.FormatInt(wildflyServer.Generation, 10)
 		if err = resources.Update(wildflyServer, r.Client, foundStatefulSet); err != nil {
-			log.Log.Error(err, "Failed to Update StatefulSet.", "StatefulSet.Namespace", foundStatefulSet.Namespace, "StatefulSet.Name", foundStatefulSet.Name)
+			log.Error(err, "Failed to Update StatefulSet.", "StatefulSet.Namespace", foundStatefulSet.Namespace, "StatefulSet.Name", foundStatefulSet.Name)
 			return requeueNow, err
 		}
-		r.Log.Info("Updating StatefulSet to be up to date with the WildFlyServer Spec", "StatefulSet.Namespace", foundStatefulSet.Namespace, "StatefulSet.Name", foundStatefulSet.Name)
+		log.Info("Updating StatefulSet to be up to date with the WildFlyServer Spec", "StatefulSet.Namespace", foundStatefulSet.Namespace, "StatefulSet.Name", foundStatefulSet.Name)
 		return requeueNow, nil
 	}
 
 	if update {
-		r.Log.Info("Updating statefulset", "StatefulSet.Replicas", foundStatefulSet.Spec.Replicas)
+		log.Info("Updating statefulset", "StatefulSet.Replicas", foundStatefulSet.Spec.Replicas)
 		if err = resources.Update(wildflyServer, r.Client, foundStatefulSet); err != nil {
-			r.Log.Error(err, "Failed to update StatefulSet.", "StatefulSet.Namespace", foundStatefulSet.Namespace, "StatefulSet.Name", foundStatefulSet.Name)
+			log.Error(err, "Failed to update StatefulSet.", "StatefulSet.Namespace", foundStatefulSet.Namespace, "StatefulSet.Name", foundStatefulSet.Name)
 			return requeueNow, err
 		}
 		return requeueNow, nil

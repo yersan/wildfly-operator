@@ -2,6 +2,8 @@ package controllers
 
 import (
 	"context"
+	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 	"testing"
 
 	wildflyv1alpha1 "github.com/wildfly/wildfly-operator/api/v1alpha1"
@@ -30,6 +32,7 @@ var (
 )
 
 func TestWildFlyServerControllerCreatesStatefulSet(t *testing.T) {
+	ctrl.SetLogger(zap.New(zap.UseDevMode(true)))
 	assert := testifyAssert.New(t)
 
 	// A WildFlyServer resource with metadata and spec.
@@ -53,9 +56,13 @@ func TestWildFlyServerControllerCreatesStatefulSet(t *testing.T) {
 	s := scheme.Scheme
 	s.AddKnownTypes(wildflyv1alpha1.GroupVersion, wildflyServer)
 	// Create a fake client to mock API calls.
-	cl := fake.NewFakeClient(objs...)
+	cl := fake.NewClientBuilder().WithRuntimeObjects(objs...).Build()
 	// Create a WildFlyServerReconciler object with the scheme and fake client.
-	r := &WildFlyServerReconciler{Client: cl, Scheme: s}
+	r := &WildFlyServerReconciler{
+		Client: cl,
+		Scheme: s,
+		Log:    ctrl.Log.WithName("test").WithName("WildFlyServer"),
+	}
 
 	// Mock request to simulate Reconcile() being called on an event for a
 	// watched resource .
@@ -98,6 +105,7 @@ func TestWildFlyServerControllerCreatesStatefulSet(t *testing.T) {
 }
 
 func TestEnvUpdate(t *testing.T) {
+	ctrl.SetLogger(zap.New(zap.UseDevMode(true)))
 	assert := testifyAssert.New(t)
 
 	initialEnv := &corev1.EnvVar{
@@ -129,9 +137,14 @@ func TestEnvUpdate(t *testing.T) {
 	s := scheme.Scheme
 	s.AddKnownTypes(wildflyv1alpha1.GroupVersion, wildflyServer)
 	// Create a fake client to mock API calls.
-	cl := fake.NewFakeClient(objs...)
+	cl := fake.NewClientBuilder().WithRuntimeObjects(objs...).Build()
 	// Create a WildFlyServerReconciler object with the scheme and fake client.
-	r := &WildFlyServerReconciler{Client: cl, Scheme: s, isOpenShift: false}
+	r := &WildFlyServerReconciler{
+		Client:      cl,
+		Scheme:      s,
+		isOpenShift: false,
+		Log:         ctrl.Log.WithName("test").WithName("WildFlyServer"),
+	}
 
 	// Mock request to simulate Reconcile() being called on an event for a
 	// watched resource .
@@ -232,6 +245,7 @@ func TestEnvUpdate(t *testing.T) {
 }
 
 func TestWildFlyServerWithSecret(t *testing.T) {
+	ctrl.SetLogger(zap.New(zap.UseDevMode(true)))
 	assert := testifyAssert.New(t)
 
 	secretName := "mysecret"
@@ -259,9 +273,13 @@ func TestWildFlyServerWithSecret(t *testing.T) {
 	s := scheme.Scheme
 	s.AddKnownTypes(wildflyv1alpha1.GroupVersion, wildflyServer)
 	// Create a fake client to mock API calls.
-	cl := fake.NewFakeClient(objs...)
+	cl := fake.NewClientBuilder().WithRuntimeObjects(objs...).Build()
 	// Create a WildFlyServerReconciler object with the scheme and fake client.
-	r := &WildFlyServerReconciler{Client: cl, Scheme: s}
+	r := &WildFlyServerReconciler{
+		Client: cl,
+		Scheme: s,
+		Log:    ctrl.Log.WithName("test").WithName("WildFlyServer"),
+	}
 
 	err := cl.Create(context.TODO(), &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
@@ -317,6 +335,7 @@ func TestWildFlyServerWithSecret(t *testing.T) {
 }
 
 func TestWildFlyServerWithConfigMap(t *testing.T) {
+	ctrl.SetLogger(zap.New(zap.UseDevMode(true)))
 	assert := testifyAssert.New(t)
 
 	configMapName := "my-config"
@@ -342,9 +361,13 @@ func TestWildFlyServerWithConfigMap(t *testing.T) {
 	s := scheme.Scheme
 	s.AddKnownTypes(wildflyv1alpha1.GroupVersion, wildflyServer)
 	// Create a fake client to mock API calls.
-	cl := fake.NewFakeClient(objs...)
+	cl := fake.NewClientBuilder().WithRuntimeObjects(objs...).Build()
 	// Create a WildFlyServerReconciler object with the scheme and fake client.
-	r := &WildFlyServerReconciler{Client: cl, Scheme: s}
+	r := &WildFlyServerReconciler{
+		Client: cl,
+		Scheme: s,
+		Log:    ctrl.Log.WithName("test").WithName("WildFlyServer"),
+	}
 
 	err := cl.Create(context.TODO(), &corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
@@ -400,6 +423,7 @@ func TestWildFlyServerWithConfigMap(t *testing.T) {
 }
 
 func TestWildFlyServerWithResources(t *testing.T) {
+	ctrl.SetLogger(zap.New(zap.UseDevMode(true)))
 	assert := testifyAssert.New(t)
 
 	var (
@@ -439,9 +463,13 @@ func TestWildFlyServerWithResources(t *testing.T) {
 	s := scheme.Scheme
 	s.AddKnownTypes(wildflyv1alpha1.GroupVersion, wildflyServer)
 	// Create a fake client to mock API calls.
-	cl := fake.NewFakeClient(objs...)
+	cl := fake.NewClientBuilder().WithRuntimeObjects(objs...).Build()
 	// Create a WildFlyServerReconciler object with the scheme and fake client.
-	r := &WildFlyServerReconciler{Client: cl, Scheme: s}
+	r := &WildFlyServerReconciler{
+		Client: cl,
+		Scheme: s,
+		Log:    ctrl.Log.WithName("test").WithName("WildFlyServer"),
+	}
 
 	// Mock request to simulate Reconcile() being called on an event for a
 	// watched resource .
