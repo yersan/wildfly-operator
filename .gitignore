@@ -1,10 +1,16 @@
+# tools for the development
 /openapi-gen
 /operator-sdk
-/operator-sdk-e2e-tests
 
-# Temporary Build Files
-build/_output
-build/_test
+#envtest temporal files
+testbin/*
+
+# Test binary, build with `go test -c`
+*.test
+
+# Output of the go coverage tool, specifically when used with LiteIDE
+cover.out
+
 # Created by https://www.gitignore.io/api/go,vim,emacs,visualstudiocode
 ### Emacs ###
 # -*- mode: gitignore; -*-
