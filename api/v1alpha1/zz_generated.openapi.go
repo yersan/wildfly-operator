@@ -47,19 +47,22 @@ func schema__api_v1alpha1_PodStatus(ref common.ReferenceCallback) common.OpenAPI
 				Properties: map[string]spec.Schema{
 					"name": {
 						SchemaProps: spec.SchemaProps{
-							Type:   []string{"string"},
-							Format: "",
+							Default: "",
+							Type:    []string{"string"},
+							Format:  "",
 						},
 					},
 					"podIP": {
 						SchemaProps: spec.SchemaProps{
-							Type:   []string{"string"},
-							Format: "",
+							Default: "",
+							Type:    []string{"string"},
+							Format:  "",
 						},
 					},
 					"state": {
 						SchemaProps: spec.SchemaProps{
 							Description: "Represent the state of the Pod, it is used especially during scale down.",
+							Default:     "",
 							Type:        []string{"string"},
 							Format:      "",
 						},
@@ -80,8 +83,9 @@ func schema__api_v1alpha1_StandaloneConfigMapSpec(ref common.ReferenceCallback) 
 				Properties: map[string]spec.Schema{
 					"name": {
 						SchemaProps: spec.SchemaProps{
-							Type:   []string{"string"},
-							Format: "",
+							Default: "",
+							Type:    []string{"string"},
+							Format:  "",
 						},
 					},
 					"key": {
@@ -113,6 +117,7 @@ func schema__api_v1alpha1_StorageSpec(ref common.ReferenceCallback) common.OpenA
 					"volumeClaimTemplate": {
 						SchemaProps: spec.SchemaProps{
 							Description: "VolumeClaimTemplate defines the template to store WildFlyServer standalone data directory. The name of the template is derived from the WildFlyServer name.\n The corresponding volume will be mounted in ReadWriteOnce access mode.\nThis template should be used to specify specific Resources requirements in the template spec.",
+							Default:     map[string]interface{}{},
 							Ref:         ref("k8s.io/api/core/v1.PersistentVolumeClaim"),
 						},
 					},
@@ -147,17 +152,20 @@ func schema__api_v1alpha1_WildFlyServer(ref common.ReferenceCallback) common.Ope
 					},
 					"metadata": {
 						SchemaProps: spec.SchemaProps{
-							Ref: ref("k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"),
+							Default: map[string]interface{}{},
+							Ref:     ref("k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"),
 						},
 					},
 					"spec": {
 						SchemaProps: spec.SchemaProps{
-							Ref: ref("./api/v1alpha1.WildFlyServerSpec"),
+							Default: map[string]interface{}{},
+							Ref:     ref("./api/v1alpha1.WildFlyServerSpec"),
 						},
 					},
 					"status": {
 						SchemaProps: spec.SchemaProps{
-							Ref: ref("./api/v1alpha1.WildFlyServerStatus"),
+							Default: map[string]interface{}{},
+							Ref:     ref("./api/v1alpha1.WildFlyServerStatus"),
 						},
 					},
 				},
@@ -178,6 +186,7 @@ func schema__api_v1alpha1_WildFlyServerSpec(ref common.ReferenceCallback) common
 					"applicationImage": {
 						SchemaProps: spec.SchemaProps{
 							Description: "ApplicationImage is the name of the application image to be deployed",
+							Default:     "",
 							Type:        []string{"string"},
 							Format:      "",
 						},
@@ -192,6 +201,7 @@ func schema__api_v1alpha1_WildFlyServerSpec(ref common.ReferenceCallback) common
 					"replicas": {
 						SchemaProps: spec.SchemaProps{
 							Description: "Replicas is the desired number of replicas for the application",
+							Default:     0,
 							Type:        []string{"integer"},
 							Format:      "int32",
 						},
@@ -239,7 +249,8 @@ func schema__api_v1alpha1_WildFlyServerSpec(ref common.ReferenceCallback) common
 							Items: &spec.SchemaOrArray{
 								Schema: &spec.Schema{
 									SchemaProps: spec.SchemaProps{
-										Ref: ref("k8s.io/api/core/v1.EnvFromSource"),
+										Default: map[string]interface{}{},
+										Ref:     ref("k8s.io/api/core/v1.EnvFromSource"),
 									},
 								},
 							},
@@ -257,7 +268,8 @@ func schema__api_v1alpha1_WildFlyServerSpec(ref common.ReferenceCallback) common
 							Items: &spec.SchemaOrArray{
 								Schema: &spec.Schema{
 									SchemaProps: spec.SchemaProps{
-										Ref: ref("k8s.io/api/core/v1.EnvVar"),
+										Default: map[string]interface{}{},
+										Ref:     ref("k8s.io/api/core/v1.EnvVar"),
 									},
 								},
 							},
@@ -275,8 +287,9 @@ func schema__api_v1alpha1_WildFlyServerSpec(ref common.ReferenceCallback) common
 							Items: &spec.SchemaOrArray{
 								Schema: &spec.Schema{
 									SchemaProps: spec.SchemaProps{
-										Type:   []string{"string"},
-										Format: "",
+										Default: "",
+										Type:    []string{"string"},
+										Format:  "",
 									},
 								},
 							},
@@ -294,8 +307,9 @@ func schema__api_v1alpha1_WildFlyServerSpec(ref common.ReferenceCallback) common
 							Items: &spec.SchemaOrArray{
 								Schema: &spec.Schema{
 									SchemaProps: spec.SchemaProps{
-										Type:   []string{"string"},
-										Format: "",
+										Default: "",
+										Type:    []string{"string"},
+										Format:  "",
 									},
 								},
 							},
@@ -326,6 +340,7 @@ func schema__api_v1alpha1_WildFlyServerStatus(ref common.ReferenceCallback) comm
 					"replicas": {
 						SchemaProps: spec.SchemaProps{
 							Description: "Replicas is the actual number of replicas for the application",
+							Default:     0,
 							Type:        []string{"integer"},
 							Format:      "int32",
 						},
@@ -341,7 +356,8 @@ func schema__api_v1alpha1_WildFlyServerStatus(ref common.ReferenceCallback) comm
 							Items: &spec.SchemaOrArray{
 								Schema: &spec.Schema{
 									SchemaProps: spec.SchemaProps{
-										Ref: ref("./api/v1alpha1.PodStatus"),
+										Default: map[string]interface{}{},
+										Ref:     ref("./api/v1alpha1.PodStatus"),
 									},
 								},
 							},
@@ -358,8 +374,9 @@ func schema__api_v1alpha1_WildFlyServerStatus(ref common.ReferenceCallback) comm
 							Items: &spec.SchemaOrArray{
 								Schema: &spec.Schema{
 									SchemaProps: spec.SchemaProps{
-										Type:   []string{"string"},
-										Format: "",
+										Default: "",
+										Type:    []string{"string"},
+										Format:  "",
 									},
 								},
 							},
@@ -368,6 +385,7 @@ func schema__api_v1alpha1_WildFlyServerStatus(ref common.ReferenceCallback) comm
 					"scalingdownPods": {
 						SchemaProps: spec.SchemaProps{
 							Description: "Represents the number of pods which are in scaledown process what particular pod is scaling down can be verified by PodStatus\n\nRead-only.",
+							Default:     0,
 							Type:        []string{"integer"},
 							Format:      "int32",
 						},
@@ -375,6 +393,7 @@ func schema__api_v1alpha1_WildFlyServerStatus(ref common.ReferenceCallback) comm
 					"selector": {
 						SchemaProps: spec.SchemaProps{
 							Description: "selector for pods, used by HorizontalPodAutoscaler",
+							Default:     "",
 							Type:        []string{"string"},
 							Format:      "",
 						},

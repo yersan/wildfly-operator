@@ -64,12 +64,12 @@ func printVersion() {
 
 func main() {
 	var metricsAddr string
-	var disableLeaderElection bool
+	var enableLeaderElection bool
 	var probeAddr string
-	flag.StringVar(&metricsAddr, "metrics-bind-address", ":8080", "The address the metric endpoint binds to.")
+	flag.StringVar(&metricsAddr, "metrics-bind-address", "0.0.0.0:8383", "The address the metric endpoint binds to.")
 	flag.StringVar(&probeAddr, "health-probe-bind-address", ":8081", "The address the probe endpoint binds to.")
-	flag.BoolVar(&disableLeaderElection, "leader-elect", true,
-		"Disable leader for life election. Enabling this will ensure there is only one active controller manager.")
+	flag.BoolVar(&enableLeaderElection, "leader-elect", false,
+		"Enable leader election for controller manager. Enabling this will ensure there is only one active controller manager.")
 	opts := zap.Options{
 		Development: true,
 	}
@@ -85,8 +85,9 @@ func main() {
 		setupLog.Error(err, "Failed to get watch namespace")
 		os.Exit(1)
 	}
+	setupLog.Info("Watching namespace", "namespace", namespace)
 
-	if disableLeaderElection {
+	if enableLeaderElection {
 		err = leader.Become(context.TODO(), "wildfly-operator-lock")
 		if err != nil {
 			setupLog.Error(err, "Failed to retry for leader lock")
@@ -94,6 +95,7 @@ func main() {
 		}
 	}
 
+	setupLog.Info("Starting the Manager")
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
 		Scheme:                 scheme,
 		MetricsBindAddress:     metricsAddr,
@@ -107,6 +109,7 @@ func main() {
 		os.Exit(1)
 	}
 
+	setupLog.Info("Setting up the reconciler")
 	if err = (&controllers.WildFlyServerReconciler{
 		Client:   mgr.GetClient(),
 		Scheme:   mgr.GetScheme(),
@@ -118,10 +121,13 @@ func main() {
 	}
 	// +kubebuilder:scaffold:builder
 
+	setupLog.Info("Adding health checks")
 	if err := mgr.AddHealthzCheck("health", healthz.Ping); err != nil {
 		setupLog.Error(err, "unable to set up health check")
 		os.Exit(1)
 	}
+
+	setupLog.Info("Adding Ready checks")
 	if err := mgr.AddReadyzCheck("check", healthz.Ping); err != nil {
 		setupLog.Error(err, "unable to set up ready check")
 		os.Exit(1)
