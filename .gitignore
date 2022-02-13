@@ -5,6 +5,9 @@
 #envtest temporal files
 testbin/*
 
+# dry-run folder, used to generate manifest for inspection
+dry-run/*
+
 # Test binary, build with `go test -c`
 *.test
 

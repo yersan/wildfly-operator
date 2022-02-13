@@ -12,7 +12,7 @@ endif
 BUNDLE_METADATA_OPTS ?= $(BUNDLE_CHANNELS) $(BUNDLE_DEFAULT_CHANNEL)
 
 # Image URL to use all building/pushing image targets
-IMG ?= controller:latest
+IMG ?= quay.io/wildfly/wildfly-operator:latest
 # Produce CRDs that work back to Kubernetes 1.11 (no version conversion)
 CRD_OPTIONS ?= "crd:trivialVersions=true,preserveUnknownFields=false"
 
@@ -44,10 +44,10 @@ manager: generate openapi fmt vet
 run: generate fmt vet manifests
 	JBOSS_HOME=/wildfly JBOSS_BOOTABLE_DATA_DIR=/opt/jboss/container/wildfly-bootable-jar-data JBOSS_BOOTABLE_HOME=/opt/jboss/container/wildfly-bootable-jar-server OPERATOR_NAME=wildfly-operator go run ./main.go
 
-run-debug: dlv generate fmt vet manifests
+# Run the manager with debug enabled
+debug: dlv generate fmt vet manifests
 	go build -o bin/manager main.go
 	JBOSS_HOME=/wildfly JBOSS_BOOTABLE_DATA_DIR=/opt/jboss/container/wildfly-bootable-jar-data JBOSS_BOOTABLE_HOME=/opt/jboss/container/wildfly-bootable-jar-server OPERATOR_NAME=wildfly-operator  ./bin/dlv --listen=:2345 --headless=true --api-version=2 --accept-multiclient exec bin/manager
-
 
 # Install CRDs into a cluster
 install: manifests kustomize
@@ -65,6 +65,13 @@ install-rbac: kustomize
 uninstall-rbac: kustomize
 	$(KUSTOMIZE) build config/rbac | kubectl delete -f -
 
+# Generate the manifests in a directory
+dry-run: manifests
+	cd config/manager && $(KUSTOMIZE) edit set image controller=${IMG}
+	mkdir -p dry-run
+	$(KUSTOMIZE) build config/default > dry-run/manifests.yaml
+
+
 # Deploy controller in the configured Kubernetes cluster in ~/.kube/config
 deploy: manifests kustomize
 	cd config/manager && $(KUSTOMIZE) edit set image controller=${IMG}
@@ -80,7 +87,7 @@ manifests: controller-gen
 
 # Generate the openapi
 openapi:
-	which ./bin/openapi-gen > /dev/null || go build -o ./openapi-gen k8s.io/kube-openapi/cmd/openapi-gen
+	which ./openapi-gen > /dev/null || go build -o ./openapi-gen k8s.io/kube-openapi/cmd/openapi-gen
 	./openapi-gen --logtostderr=true -o "" -i ./api/v1alpha1 -O zz_generated.openapi -p ./api/v1alpha1 -h ./hack/boilerplate.go.txt -r "-"
 
 # Run go fmt against code

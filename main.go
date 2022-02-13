@@ -27,7 +27,9 @@ import (
 	// to ensure that exec-entrypoint and run can make use of them.
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 
+	route "github.com/openshift/api/route/v1"
 	"github.com/operator-framework/operator-lib/leader"
+	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	wildflyv1alpha1 "github.com/wildfly/wildfly-operator/api/v1alpha1"
 	"github.com/wildfly/wildfly-operator/controllers"
 	"github.com/wildfly/wildfly-operator/version"
@@ -51,7 +53,8 @@ var (
 
 func init() {
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
-
+	utilruntime.Must(route.AddToScheme(scheme))
+	utilruntime.Must(monitoringv1.AddToScheme(scheme))
 	utilruntime.Must(wildflyv1alpha1.AddToScheme(scheme))
 	// +kubebuilder:scaffold:scheme
 }

@@ -296,9 +296,10 @@ func (r *WildFlyServerReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		builder.Owns(&monitoringv1.ServiceMonitor{})
 	}
 
-	// watch for Route only on OpenShift
+	//watch for Route only on OpenShift
 	if isOpenShift(mgr.GetConfig()) {
 		builder.Owns(&routev1.Route{})
+		r.isOpenShift = true
 	}
 
 	return builder.Complete(r)
@@ -542,6 +543,15 @@ func isOpenShift(c *rest.Config) bool {
 	}
 	return isOpenShift
 }
+
+//// hasServiceMonitor checks if ServiceMonitor is registered in the cluster.
+//func hasServiceMonitor(config *rest.Config) (bool, error) {
+//	dc := discovery.NewDiscoveryClientForConfigOrDie(config)
+//	apiVersion := "monitoring.coreos.com/v1"
+//	kind := "ServiceMonitor"
+//
+//	return k8sutil.ResourceExists(dc, apiVersion, kind)
+//}
 
 // hasServiceMonitor checks if ServiceMonitor kind is registered in the cluster.
 func hasServiceMonitor() bool {
