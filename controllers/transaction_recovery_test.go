@@ -94,7 +94,7 @@ func setupBeforeScaleDown(t *testing.T, wildflyServer *wildflyv1alpha1.WildFlySe
 	r = &WildFlyServerReconciler{Client: cl,
 		Scheme:      s,
 		Recorder:    eventRecorderMock{},
-		isOpenShift: false,
+		IsOpenShift: false,
 		Log:         ctrl.Log.WithName("test").WithName("transaction"),
 	}
 

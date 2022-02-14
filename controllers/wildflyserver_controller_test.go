@@ -142,7 +142,7 @@ func TestEnvUpdate(t *testing.T) {
 	r := &WildFlyServerReconciler{
 		Client:      cl,
 		Scheme:      s,
-		isOpenShift: false,
+		IsOpenShift: false,
 		Log:         ctrl.Log.WithName("test").WithName("WildFlyServer"),
 	}
 

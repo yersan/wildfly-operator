@@ -20,6 +20,7 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"github.com/RHsyseng/operator-utils/pkg/utils/openshift"
 	"os"
 	goruntime "runtime"
 
@@ -113,11 +114,17 @@ func main() {
 	}
 
 	setupLog.Info("Setting up the reconciler")
+	isOpenShift, err := openshift.IsOpenShift(mgr.GetConfig())
+	if err != nil {
+		setupLog.Error(err, "unable to detect if we are running on an OpenShift cluster")
+		os.Exit(1)
+	}
 	if err = (&controllers.WildFlyServerReconciler{
-		Client:   mgr.GetClient(),
-		Scheme:   mgr.GetScheme(),
-		Recorder: mgr.GetEventRecorderFor(controllerName),
-		Log:      ctrl.Log.WithName("controllers").WithName("WildFlyServer"),
+		Client:      mgr.GetClient(),
+		Scheme:      mgr.GetScheme(),
+		Recorder:    mgr.GetEventRecorderFor(controllerName),
+		Log:         ctrl.Log.WithName("controllers").WithName("WildFlyServer"),
+		IsOpenShift: isOpenShift,
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "WildFlyServer")
 		os.Exit(1)

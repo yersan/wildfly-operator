@@ -20,7 +20,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	openshiftutils "github.com/RHsyseng/operator-utils/pkg/utils/openshift"
 	"github.com/go-logr/logr"
 	routev1 "github.com/openshift/api/route/v1"
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
@@ -38,7 +37,6 @@ import (
 	"github.com/wildfly/wildfly-operator/pkg/resources/statefulsets"
 
 	v1 "k8s.io/api/core/v1"
-	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/record"
 	"os"
 	"sigs.k8s.io/controller-runtime/pkg/log"
@@ -66,7 +64,7 @@ type WildFlyServerReconciler struct {
 	Scheme   *runtime.Scheme
 	Recorder record.EventRecorder
 	// returns true if the operator is running on OpenShift
-	isOpenShift bool
+	IsOpenShift bool
 	Log         logr.Logger
 }
 
@@ -189,7 +187,7 @@ func (r *WildFlyServerReconciler) Reconcile(ctx context.Context, request ctrl.Re
 
 	// Check if the HTTP route must be created
 	var route *routev1.Route
-	if r.isOpenShift {
+	if r.IsOpenShift {
 		if !wildflyServer.Spec.DisableHTTPRoute {
 			if route, err = routes.GetOrCreateNewRoute(wildflyServer, r.Client, r.Scheme, LabelsForWildFly(wildflyServer)); err != nil {
 				return reconcile.Result{}, err
@@ -217,7 +215,7 @@ func (r *WildFlyServerReconciler) Reconcile(ctx context.Context, request ctrl.Re
 
 	// Update WildFly Server host status
 	updateWildflyServer := false
-	if r.isOpenShift {
+	if r.IsOpenShift {
 		if !wildflyServer.Spec.DisableHTTPRoute {
 			hosts := make([]string, len(route.Status.Ingress))
 			for i, ingress := range route.Status.Ingress {
@@ -297,9 +295,8 @@ func (r *WildFlyServerReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	}
 
 	//watch for Route only on OpenShift
-	if isOpenShift(mgr.GetConfig()) {
+	if r.IsOpenShift {
 		builder.Owns(&routev1.Route{})
-		r.isOpenShift = true
 	}
 
 	return builder.Complete(r)
@@ -533,15 +530,6 @@ func LabelsForWildFly(w *wildflyv1alpha1.WildFlyServer) map[string]string {
 // errorIsMatchesForKind return true if the error is that there is no matches for the kind & version
 func errorIsNoMatchesForKind(err error, kind string, version string) bool {
 	return strings.HasPrefix(err.Error(), fmt.Sprintf("no matches for kind \"%s\" in version \"%s\"", kind, version))
-}
-
-// isOpenShift returns true when the container platform is detected as OpenShift
-func isOpenShift(c *rest.Config) bool {
-	isOpenShift, err := openshiftutils.IsOpenShift(c)
-	if err != nil {
-		return false
-	}
-	return isOpenShift
 }
 
 //// hasServiceMonitor checks if ServiceMonitor is registered in the cluster.
