@@ -23,18 +23,17 @@ import (
 	"github.com/go-logr/logr"
 	routev1 "github.com/openshift/api/route/v1"
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
+	"github.com/wildfly/wildfly-operator/pkg/resources"
+	"github.com/wildfly/wildfly-operator/pkg/resources/routes"
+	"github.com/wildfly/wildfly-operator/pkg/resources/servicemonitors"
+	"github.com/wildfly/wildfly-operator/pkg/resources/services"
+	"github.com/wildfly/wildfly-operator/pkg/resources/statefulsets"
 	wildflyutil "github.com/wildfly/wildfly-operator/pkg/util"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	apiErrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"reflect"
-
-	"github.com/wildfly/wildfly-operator/pkg/resources"
-	"github.com/wildfly/wildfly-operator/pkg/resources/routes"
-	"github.com/wildfly/wildfly-operator/pkg/resources/servicemonitors"
-	"github.com/wildfly/wildfly-operator/pkg/resources/services"
-	"github.com/wildfly/wildfly-operator/pkg/resources/statefulsets"
 
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/tools/record"
@@ -284,6 +283,7 @@ func (r *WildFlyServerReconciler) Reconcile(ctx context.Context, request ctrl.Re
 
 // SetupWithManager sets up the controller with the Manager.
 func (r *WildFlyServerReconciler) SetupWithManager(mgr ctrl.Manager) error {
+	r.Log.Info("Setting up with manager")
 	builder := ctrl.NewControllerManagedBy(mgr).
 		For(&wildflyv1alpha1.WildFlyServer{})
 

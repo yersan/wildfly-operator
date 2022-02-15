@@ -8,8 +8,9 @@ require (
 	github.com/go-logr/logr v0.4.0
 	github.com/go-openapi/spec v0.19.9
 	github.com/go-openapi/swag v0.19.10 // indirect
-	github.com/onsi/ginkgo v1.14.1
-	github.com/onsi/gomega v1.10.2
+	github.com/onsi/ginkgo v1.16.5
+	github.com/onsi/ginkgo/v2 v2.1.2 // indirect
+	github.com/onsi/gomega v1.18.1
 	github.com/openshift/api v0.0.0-20210928121311-b64fe3d0dc32
 	github.com/operator-framework/operator-lib v0.3.0
 	github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring v0.50.0
