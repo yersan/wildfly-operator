@@ -12,7 +12,7 @@
 #commonLabels:
 #  name: wildfly-operator
 
-bases:
+resources:
 - ../crd
 - ../rbac
 - ../manager

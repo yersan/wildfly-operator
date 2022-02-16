@@ -57,7 +57,6 @@ func init() {
 	utilruntime.Must(route.AddToScheme(scheme))
 	utilruntime.Must(monitoringv1.AddToScheme(scheme))
 	utilruntime.Must(wildflyv1alpha1.AddToScheme(scheme))
-	// +kubebuilder:scaffold:scheme
 }
 
 func printVersion() {

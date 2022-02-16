@@ -109,12 +109,19 @@ unit-test: generate fmt vet ## Run unit-tests.
 	go test -v ./controllers/...
 
 .PHONY: local-test
-local-test: manifests generate fmt vet envtest deploy ## Run tests.
+local-test: manifests generate fmt vet envtest ## Run tests.
 	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(ENVTEST_K8S_VERSION) -p path)" go test -v ./test/e2e/... -coverprofile cover.out
 
 .PHONY: test
-test: manifests generate fmt vet envtest ## Run tests.
-	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(ENVTEST_K8S_VERSION) -p path)" LOCAL_MANAGER=0 go test -v ./test/e2e/... -coverprofile cover.out
+test: manifests generate fmt vet envtest kustomize ## Run tests.
+	cd config/manager && $(KUSTOMIZE) edit set image controller=${IMG}
+	$(KUSTOMIZE) build config/tests | kubectl apply -f -
+	LOCAL_MANAGER=0 go test -v ./test/e2e/... -coverprofile cover.out
+	$(KUSTOMIZE) build config/tests | kubectl delete --ignore-not-found=true -f -
+
+.PHONY: clean
+clean: kustomize
+	$(KUSTOMIZE) build config/tests | kubectl delete --ignore-not-found=true -f -
 
 ##@ Build
 

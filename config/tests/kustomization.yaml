@@ -1,3 +1,4 @@
 resources:
   - test-namespace.yaml
   - ./../default
+namespace: wildfly-op-test-ns
