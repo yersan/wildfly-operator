@@ -89,7 +89,6 @@ var _ = Describe("WildFly Server tests", func() {
 	})
 
 	It("WildFlyServer can be created and scaled up", func() {
-		Skip("Skipping")
 		applicationImage := "quay.io/wildfly-quickstarts/wildfly-operator-quickstart:18.0"
 		name := "example-wildfly"
 		ctx := context.Background()
@@ -129,7 +128,6 @@ var _ = Describe("WildFly Server tests", func() {
 	})
 
 	It("WildFlyServer can form a cluster", func() {
-		Skip("Skipping")
 		applicationImage := "quay.io/wildfly-quickstarts/clusterbench-ee7:22.0"
 		name := "cluster-bench"
 		ctx := context.Background()
@@ -187,6 +185,7 @@ var _ = Describe("WildFly Server tests", func() {
 		WaitUntilReady(ctx, k8sClient, serverCpy)
 
 		// Ensure we have just one replica over a duration of time
+		log.Printf("Transaction recovery finished and the server has been scalled down. Waiting %s seconds to ensure the stability.", duration)
 		stsHolder := &appsv1.StatefulSet{}
 		Consistently(func() bool {
 			err := k8sClient.Get(ctx, types.NamespacedName{Name: serverCpy.Name, Namespace: serverCpy.Namespace}, stsHolder)

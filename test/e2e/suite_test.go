@@ -256,16 +256,15 @@ func WaitUntilReady(ctx context.Context, k8sClient client.Client, server *wildfl
 	name := server.Name
 	ns := server.Namespace
 	size := server.Spec.Replicas
-	kind := server.Kind
 
 	stsLookupKey := types.NamespacedName{Name: name, Namespace: ns}
 	statefulSet := &appsv1.StatefulSet{}
-	log.Printf("Creating resource %s with name %s.", kind, name)
+	log.Printf("Creating %s WildFly Server resource.", name)
 	Eventually(func() bool {
 		err := k8sClient.Get(ctx, stsLookupKey, statefulSet)
 		if err != nil {
 			if apierrors.IsNotFound(err) {
-				log.Printf("Resource %s with name %s not found.", kind, name)
+				log.Printf("Resource %s not found.", name)
 			}
 			return false
 		}
@@ -305,9 +304,8 @@ func WaitUntilDeploymentReady(ctx context.Context, k8sClient client.Client, depl
 func WaitUntilServerDeleted(ctx context.Context, k8sClient client.Client, server *wildflyv1alpha1.WildFlyServer) {
 	name := server.Name
 	ns := server.Namespace
-	kind := server.Kind
 
-	log.Printf("Deleting resource %s with name %s", kind, name)
+	log.Printf("Deleting %s WildFly Server resource", name)
 	err := k8sClient.Delete(context.Background(), server, client.PropagationPolicy(metav1.DeletePropagationBackground))
 	Expect(err).ToNot(HaveOccurred())
 
@@ -316,11 +314,11 @@ func WaitUntilServerDeleted(ctx context.Context, k8sClient client.Client, server
 	Eventually(func() bool {
 		err := k8sClient.Get(ctx, stsLookupKey, statefulSet)
 		if err != nil && apierrors.IsNotFound(err) {
-			log.Printf("Resource %s with name %s deleted", kind, name)
+			log.Printf("Resource %s deleted", name)
 			return true
 		}
 
-		log.Printf("Waiting until resource %s with name %s is deleted", kind, name)
+		log.Printf("Waiting until resource %s is deleted", name)
 		return false
 	}, timeout, interval).Should(BeTrue())
 }
