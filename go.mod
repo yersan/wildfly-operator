@@ -6,7 +6,6 @@ require (
 	github.com/Azure/go-autorest/autorest v0.11.10 // indirect
 	github.com/RHsyseng/operator-utils v1.4.7
 	github.com/go-logr/logr v0.4.0
-	github.com/go-openapi/spec v0.19.9
 	github.com/go-openapi/swag v0.19.10 // indirect
 	github.com/onsi/ginkgo/v2 v2.1.3
 	github.com/onsi/gomega v1.18.1
@@ -21,8 +20,8 @@ require (
 	k8s.io/api v0.20.4
 	k8s.io/apimachinery v0.20.4
 	k8s.io/client-go v12.0.0+incompatible
-	k8s.io/kube-openapi v0.0.0-20201113171705-d219536bb9fd
-	k8s.io/utils v0.0.0-20210111153108-fddb29f9d009
+	k8s.io/kube-openapi v0.0.0-20220124234850-424119656bbf
+	k8s.io/utils v0.0.0-20210802155522-efc7438f0176
 	sigs.k8s.io/controller-runtime v0.8.3
 )
 

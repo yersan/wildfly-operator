@@ -97,7 +97,7 @@ dry-run: manifests
 	$(KUSTOMIZE) build config/default > dry-run/manifests.yaml
 
 # Generate the openapi
-.PHONY: openapi
+.PHONY: openapi-setup
 openapi:
 	which ./openapi-gen > /dev/null || go build -o ./openapi-gen k8s.io/kube-openapi/cmd/openapi-gen
 	./openapi-gen --logtostderr=true -o "" -i ./api/v1alpha1 -O zz_generated.openapi -p ./api/v1alpha1 -h ./hack/boilerplate.go.txt -r "-"
