@@ -1,4 +1,4 @@
 resources:
-  - test-namespace.yaml
-  - ./../default
+  - ./../manager
+  - ./../rbac
 namespace: wildfly-op-test-ns

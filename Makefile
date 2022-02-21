@@ -47,6 +47,16 @@ else
 GOBIN=$(shell go env GOBIN)
 endif
 
+# This is the test name space, it is used in this makefile to allow clean it up by using make clean
+define TEST_NAMESPACE_YAML
+kind: Namespace
+apiVersion: v1
+metadata:
+  name: wildfly-op-test-ns
+  labels:
+    name:  wildfly-op-test-ns
+endef
+
 # Setting SHELL to bash allows bash commands to be executed by recipes.
 # This is a requirement for 'setup-envtest.sh' in the test target.
 # Options are set to exit when a recipe line exits non-zero or a piped command fails.
@@ -115,13 +125,16 @@ local-test: manifests generate fmt vet envtest ## Run tests.
 .PHONY: test
 test: manifests generate fmt vet envtest kustomize ## Run tests.
 	cd config/manager && $(KUSTOMIZE) edit set image controller=${IMG}
-	$(KUSTOMIZE) build config/tests | kubectl apply -f -
+	$(KUSTOMIZE) build config/rbac | kubectl apply -f -
+	$(KUSTOMIZE) build config/tests > dry-run/test-resources.yaml
 	LOCAL_MANAGER=0 go test -v ./test/e2e/... -coverprofile cover.out
-	$(KUSTOMIZE) build config/tests | kubectl delete --ignore-not-found=true -f -
+	$(KUSTOMIZE) build config/rbac | kubectl delete --ignore-not-found=true -f -
 
 .PHONY: clean
+export TEST_NAMESPACE_YAML
 clean: kustomize
-	$(KUSTOMIZE) build config/tests | kubectl delete --ignore-not-found=true -f -
+	$(KUSTOMIZE) build config/rbac | kubectl delete --ignore-not-found=true -f -
+	echo "$$TEST_NAMESPACE_YAML" | kubectl delete --ignore-not-found=true -f -
 
 ##@ Build
 

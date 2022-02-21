@@ -35,7 +35,6 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"reflect"
 
-	v1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/tools/record"
 	"os"
 	"sigs.k8s.io/controller-runtime/pkg/log"
@@ -51,10 +50,9 @@ import (
 )
 
 const (
-	controllerName = "wildflyserver-controller"
-	requeueOff     = iota // 0
-	requeueLater   = iota // 1
-	requeueNow     = iota // 2
+	requeueOff   = iota // 0
+	requeueLater = iota // 1
+	requeueNow   = iota // 2
 )
 
 // WildFlyServerReconciler reconciles a WildFlyServer object
@@ -428,11 +426,11 @@ func (r *WildFlyServerReconciler) checkStatefulSet(wildflyServer *wildflyv1alpha
 
 func (r *WildFlyServerReconciler) manageError(w *wildflyv1alpha1.WildFlyServer, err error) (reconcile.Result, error) {
 	if err == nil {
-		r.Recorder.Event(w, v1.EventTypeWarning, "WildFlyProcessingError", "Unknown Error")
+		r.Recorder.Event(w, corev1.EventTypeWarning, "WildFlyProcessingError", "Unknown Error")
 		return reconcile.Result{}, err
 	}
 
-	r.Recorder.Event(w, v1.EventTypeWarning, "WildFlyProcessingError", err.Error())
+	r.Recorder.Event(w, corev1.EventTypeWarning, "WildFlyProcessingError", err.Error())
 	return reconcile.Result{}, err
 }
 
@@ -445,7 +443,7 @@ func validate(w *wildflyv1alpha1.WildFlyServer) (bool, error) {
 
 // matches checks if the envVar from the WildFlyServerSpec matches the same env var from the container.
 // If it does not match, it updates the container EnvVar with the fields from the WildFlyServerSpec and return false.
-func matches(container *v1.Container, envVar corev1.EnvVar) bool {
+func matches(container *corev1.Container, envVar corev1.EnvVar) bool {
 	for index, e := range container.Env {
 		if envVar.Name == e.Name {
 			if !reflect.DeepEqual(envVar, e) {
