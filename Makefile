@@ -118,12 +118,23 @@ vet: ## Run go vet against code.
 unit-test: generate fmt vet ## Run unit-tests.
 	go test -v ./controllers/...
 
-.PHONY: local-test
-local-test: manifests generate fmt vet envtest ## Run tests.
+.PHONY: test
+local-test: manifests generate fmt vet envtest ## Run tests in a local cluster.
 	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(ENVTEST_K8S_VERSION) -p path)" go test -v ./test/e2e/... -coverprofile cover.out
 
-.PHONY: test
-test: manifests generate fmt vet envtest kustomize ## Run tests.
+.PHONY: test-e2e
+test: prepare-test-e2e run-test-e2e ## Run the E2E tests.
+
+.PHONY: test-e2e-minikube
+test-e2e-minikube: prepare-test-e2e
+	docker run -d -p 5000:5000 --restart=always --name image-registry registry || true
+	IMG="localhost:5000/wildfly-operator:latest" make docker-build docker-push run-test-e2e
+
+.PHONY: prepare-test-e2e
+prepare-test-e2e: manifests generate fmt vet envtest kustomize
+
+.PHONY: run-test-e2e
+run-test-e2e:
 	cd config/manager && $(KUSTOMIZE) edit set image controller=${IMG}
 	$(KUSTOMIZE) build config/rbac | kubectl apply -f -
 	$(KUSTOMIZE) build config/tests > dry-run/test-resources.yaml
@@ -152,7 +163,7 @@ debug: dlv generate fmt vet manifests
 	JBOSS_HOME=/wildfly JBOSS_BOOTABLE_DATA_DIR=/opt/jboss/container/wildfly-bootable-jar-data JBOSS_BOOTABLE_HOME=/opt/jboss/container/wildfly-bootable-jar-server OPERATOR_NAME=wildfly-operator  ./bin/dlv --listen=:2345 --headless=true --api-version=2 --accept-multiclient exec bin/manager
 
 .PHONY: docker-build
-docker-build: local-test openapi ## Build docker image with the manager.
+docker-build: unit-test openapi ## Build docker image with the manager.
 	docker build -t ${IMG} .
 
 .PHONY: docker-push
