@@ -150,7 +150,7 @@ clean: kustomize
 ##@ Build
 
 .PHONY: build
-build: generate openapi fmt vet ## Build manager binary.
+build: generate fmt vet openapi ## Build manager binary.
 	go build -o bin/manager main.go
 
 .PHONY: run
