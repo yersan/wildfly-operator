@@ -119,7 +119,7 @@ unit-test: generate fmt vet ## Run unit-tests.
 
 .PHONY: test
 local-test: manifests generate fmt vet envtest ## Run E2E tests running the Operator locally outside the cluster.
-	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(ENVTEST_K8S_VERSION) -p path)" go test -v ./test/e2e/... -coverprofile cover.out
+	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(ENVTEST_K8S_VERSION) -p path)" $(GOBIN)/ginkgo -v ./test/e2e/... -coverprofile cover.out
 
 .PHONY: test-e2e
 test: prepare-test-e2e run-test-e2e ## Run E2E tests running the Operator as a Deployment inside the cluster.
@@ -139,7 +139,7 @@ run-test-e2e:
 	$(KUSTOMIZE) build config/rbac | kubectl apply -f -
 	mkdir -p dry-run
 	$(KUSTOMIZE) build config/tests > dry-run/test-resources.yaml
-	LOCAL_MANAGER=0 go test -v ./test/e2e/... -coverprofile cover.out
+	LOCAL_MANAGER=0 $(GOBIN)/ginkgo -v ./test/e2e/... -coverprofile cover.out
 	$(KUSTOMIZE) build config/rbac | kubectl delete --ignore-not-found=true -f -
 
 .PHONY: clean
