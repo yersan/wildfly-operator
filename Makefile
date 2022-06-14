@@ -19,6 +19,7 @@ tidy:
 vendor: tidy
 	go mod vendor
 
+
 ## codegen               Ensure code is generated.
 codegen: setup
     # see https://github.com/operator-framework/operator-sdk/issues/1854#issuecomment-525132306
