@@ -162,7 +162,7 @@ vendor:  tidy ## Add missing and remove unused modules and make vendored copy of
 	go mod vendor
 
 .PHONY: build
-build: tidy generate fmt vet openapi ## Build manager binary.
+build: vendor generate fmt vet openapi ## Build manager binary.
 	go build -o bin/manager main.go
 
 .PHONY: run
