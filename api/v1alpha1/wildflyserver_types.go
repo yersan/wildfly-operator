@@ -69,6 +69,36 @@ type WildFlyServerSpec struct {
 	Resources *corev1.ResourceRequirements `json:"resources,omitempty"`
 	// SecurityContext defines the security capabilities required to run the application.
 	SecurityContext *corev1.SecurityContext `json:"securityContext,omitempty"`
+	// LivenessProbe defines the periodic probe of container liveness. Container will be restarted if the probe fails
+	LivenessProbe *ProbeSpec `json:"livenessProbe,omitempty"`
+	// ReadinessProbe defines the periodic probe of container service readiness. Container will be removed from service endpoints if the probe fails.
+	ReadinessProbe *ProbeSpec `json:"readinessProbe,omitempty"`
+}
+
+// ProbeSpec Probe describes a health check to be performed against a container to determine whether it is alive or ready to receive traffic.
+// +k8s:openapi-gen=true
+type ProbeSpec struct {
+	// Number of seconds after the container has started before liveness probes are initiated.
+	// Defaults to 60 seconds. Minimum value is 0.
+	// +optional
+	InitialDelaySeconds int32 `json:"initialDelaySeconds,omitempty"`
+	// Number of seconds after which the probe times out.
+	// Defaults to 1 second. Minimum value is 1.
+	// More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#container-probes
+	// +optional
+	TimeoutSeconds int32 `json:"timeoutSeconds,omitempty"`
+	// How often (in seconds) to perform the probe.
+	// Default to 10 seconds. Minimum value is 1.
+	// +optional
+	PeriodSeconds int32 `json:"periodSeconds,omitempty"`
+	// Minimum consecutive successes for the probe to be considered successful after having failed.
+	// Defaults to 1. Must be 1 for liveness and startup. Minimum value is 1.
+	// +optional
+	SuccessThreshold int32 `json:"successThreshold,omitempty"`
+	// Minimum consecutive failures for the probe to be considered failed after having succeeded.
+	// Defaults to 3. Minimum value is 1.
+	// +optional
+	FailureThreshold int32 `json:"failureThreshold,omitempty"`
 }
 
 // StandaloneConfigMapSpec defines the desired configMap configuration to obtain the standalone configuration for WildFlyServer

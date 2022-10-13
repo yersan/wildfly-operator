@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"os"
 	"path"
+	"strconv"
 
 	"k8s.io/apimachinery/pkg/api/errors"
 	k8slabels "k8s.io/apimachinery/pkg/labels"
@@ -290,14 +291,38 @@ func createResources(r *corev1.ResourceRequirements) corev1.ResourceRequirements
 // complies to the Kubernetes probes requirements.
 func createLivenessProbe(w *wildflyv1alpha1.WildFlyServer) *corev1.Probe {
 	livenessProbeScript, defined := os.LookupEnv("SERVER_LIVENESS_SCRIPT")
+
+	var initialDelaySeconds int32 = 60
+	var timeoutSeconds int32
+	var periodSeconds int32
+	var successThreshold int32
+	var failureThreshold int32
+
+	if w.Spec.LivenessProbe != nil {
+		initialDelaySeconds = w.Spec.LivenessProbe.InitialDelaySeconds
+		timeoutSeconds = w.Spec.LivenessProbe.TimeoutSeconds
+		periodSeconds = w.Spec.LivenessProbe.PeriodSeconds
+		successThreshold = w.Spec.LivenessProbe.SuccessThreshold
+		failureThreshold = w.Spec.LivenessProbe.FailureThreshold
+	}
+
 	if defined && !w.Spec.BootableJar {
+		livenessProbeScriptFallback, definedFallback := os.LookupEnv("SERVER_LIVENESS_SCRIPT_FALLBACK")
+		if !definedFallback {
+			livenessProbeScriptFallback = "curl 127.0.0.1:" + strconv.Itoa(int(resources.HTTPManagementPort)) + "/health/live"
+		}
+		probeScript := "if [ -f " + livenessProbeScript + " ]; then " + livenessProbeScript + "; else " + livenessProbeScriptFallback + "; fi"
 		return &corev1.Probe{
 			Handler: corev1.Handler{
 				Exec: &corev1.ExecAction{
-					Command: []string{"/bin/bash", "-c", livenessProbeScript},
+					Command: []string{"/bin/bash", "-c", probeScript},
 				},
 			},
-			InitialDelaySeconds: 60,
+			InitialDelaySeconds: initialDelaySeconds,
+			TimeoutSeconds:      timeoutSeconds,
+			PeriodSeconds:       periodSeconds,
+			SuccessThreshold:    successThreshold,
+			FailureThreshold:    failureThreshold,
 		}
 	}
 	return &corev1.Probe{
@@ -307,7 +332,11 @@ func createLivenessProbe(w *wildflyv1alpha1.WildFlyServer) *corev1.Probe {
 				Port: intstr.FromString("admin"),
 			},
 		},
-		InitialDelaySeconds: 60,
+		InitialDelaySeconds: initialDelaySeconds,
+		TimeoutSeconds:      timeoutSeconds,
+		PeriodSeconds:       periodSeconds,
+		SuccessThreshold:    successThreshold,
+		FailureThreshold:    failureThreshold,
 	}
 }
 
@@ -318,15 +347,38 @@ func createLivenessProbe(w *wildflyv1alpha1.WildFlyServer) *corev1.Probe {
 // complies to the Kubernetes probes requirements.
 func createReadinessProbe(w *wildflyv1alpha1.WildFlyServer) *corev1.Probe {
 	readinessProbeScript, defined := os.LookupEnv("SERVER_READINESS_SCRIPT")
+
+	var initialDelaySeconds int32 = 30
+	var timeoutSeconds int32
+	var periodSeconds int32
+	var successThreshold int32
+	var failureThreshold int32 = 6
+
+	if w.Spec.ReadinessProbe != nil {
+		initialDelaySeconds = w.Spec.ReadinessProbe.InitialDelaySeconds
+		timeoutSeconds = w.Spec.ReadinessProbe.TimeoutSeconds
+		periodSeconds = w.Spec.ReadinessProbe.PeriodSeconds
+		successThreshold = w.Spec.ReadinessProbe.SuccessThreshold
+		failureThreshold = w.Spec.ReadinessProbe.FailureThreshold
+	}
+
 	if defined && !w.Spec.BootableJar {
+		readinessProbeScriptFallback, definedFallback := os.LookupEnv("SERVER_READINESS_SCRIPT_FALLBACK")
+		if !definedFallback {
+			readinessProbeScriptFallback = "curl 127.0.0.1:" + strconv.Itoa(int(resources.HTTPManagementPort)) + "/health/ready"
+		}
+		probeScript := "if [ -f " + readinessProbeScript + " ]; then " + readinessProbeScript + "; else " + readinessProbeScriptFallback + "; fi"
 		return &corev1.Probe{
 			Handler: corev1.Handler{
 				Exec: &corev1.ExecAction{
-					Command: []string{"/bin/bash", "-c", readinessProbeScript},
+					Command: []string{"/bin/bash", "-c", probeScript},
 				},
 			},
-			InitialDelaySeconds: 30,
-			FailureThreshold:    6,
+			InitialDelaySeconds: initialDelaySeconds,
+			TimeoutSeconds:      timeoutSeconds,
+			PeriodSeconds:       periodSeconds,
+			SuccessThreshold:    successThreshold,
+			FailureThreshold:    failureThreshold,
 		}
 	}
 	return &corev1.Probe{
@@ -336,8 +388,11 @@ func createReadinessProbe(w *wildflyv1alpha1.WildFlyServer) *corev1.Probe {
 				Port: intstr.FromString("admin"),
 			},
 		},
-		InitialDelaySeconds: 30,
-		FailureThreshold:    6,
+		InitialDelaySeconds: initialDelaySeconds,
+		TimeoutSeconds:      timeoutSeconds,
+		PeriodSeconds:       periodSeconds,
+		SuccessThreshold:    successThreshold,
+		FailureThreshold:    failureThreshold,
 	}
 }
 

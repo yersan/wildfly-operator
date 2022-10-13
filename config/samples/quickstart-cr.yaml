@@ -5,3 +5,5 @@ metadata:
 spec:
   applicationImage: "quay.io/wildfly-quickstarts/wildfly-operator-quickstart:18.0"
   replicas: 2
+  livenessProbe:
+    initialDelaySeconds: 40
