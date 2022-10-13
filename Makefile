@@ -167,7 +167,7 @@ build: vendor generate fmt vet openapi ## Build manager binary.
 
 .PHONY: run
 run: manifests generate fmt vet ## Run a controller from your host.
-	go run ./main.go
+	JBOSS_HOME=/wildfly JBOSS_BOOTABLE_DATA_DIR=/opt/jboss/container/wildfly-bootable-jar-data JBOSS_BOOTABLE_HOME=/opt/jboss/container/wildfly-bootable-jar-server OPERATOR_NAME=wildfly-operator SERVER_LIVENESS_SCRIPT=liveness.sh SERVER_READINESS_SCRIPT=readiness.sh go run ./main.go
 
 # Run the manager with debug enabled
 debug: dlv generate fmt vet manifests
