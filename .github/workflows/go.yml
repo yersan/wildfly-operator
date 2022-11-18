@@ -36,8 +36,8 @@ jobs:
       if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/0.5.x'
       with:
         registry: ${{ env.REGISTRY }}
-        username: ${{ env.REGISTRY_USER }}
-        password: ${{ env.REGISTRY_PASSWORD }}
+        username: ${{ QUAY_PASSWORD }}
+        password: ${{ QUAY_USERNAME }}
     - name: Build and Push Image (main and 0.5.x only)
       if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/0.5.x'
       run: make manifests docker-build docker-push
