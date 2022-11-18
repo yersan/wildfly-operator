@@ -38,7 +38,7 @@ jobs:
         registry: ${{ env.REGISTRY }}
         username: ${{ env.REGISTRY_USER }}
         password: ${{ env.REGISTRY_PASSWORD }}
-    - name: Build and Push Image (main only)
-      if: github.ref == 'refs/heads/main'
+    - name: Build and Push Image (main and 0.5.x)
+      if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/0.5.x'
       run: make manifests docker-build docker-push
 
