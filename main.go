@@ -49,7 +49,7 @@ const (
 
 var (
 	scheme   = runtime.NewScheme()
-	setupLog = ctrl.Log.WithName("setup-test")
+	setupLog = ctrl.Log.WithName("setup-test-2")
 )
 
 func init() {
