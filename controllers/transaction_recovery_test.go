@@ -3,7 +3,6 @@ package controllers
 import (
 	"context"
 	"fmt"
-	"github.com/prometheus/common/log"
 	testifyAssert "github.com/stretchr/testify/assert"
 	wildflyv1alpha1 "github.com/wildfly/wildfly-operator/api/v1alpha1"
 	wildflyutil "github.com/wildfly/wildfly-operator/pkg/util"
@@ -124,7 +123,7 @@ func setupBeforeScaleDown(t *testing.T, wildflyServer *wildflyv1alpha1.WildFlySe
 	err = cl.Update(context.TODO(), statefulSet)
 	require.NoError(t, err)
 
-	log.Info("Waiting for WildflyServer is updated to the state where WildflyServer.Status.Pods refers the Pod created by the test")
+	ctrl.Log.Info("Waiting for WildflyServer is updated to the state where WildflyServer.Status.Pods refers the Pod created by the test")
 	err = wait.Poll(100*time.Millisecond, 5*time.Second, func() (done bool, err error) {
 		_, err = r.Reconcile(context.TODO(), req)
 		require.NoError(t, err)
@@ -147,12 +146,16 @@ func setupBeforeScaleDown(t *testing.T, wildflyServer *wildflyv1alpha1.WildFlySe
 }
 
 func TestRecoveryScaleDownToPodInvestigation(t *testing.T) {
+	// Set the logger to development mode for verbose logs.
+	ctrl.SetLogger(zap.New(zap.UseDevMode(true)))
+	assert = testifyAssert.New(t)
+
 	wildflyServer := defaultWildflyServerDefinition.DeepCopy()
 	expectedReplicaSize := int32(1)
 
 	setupBeforeScaleDown(t, wildflyServer, expectedReplicaSize)
 
-	log.Info("WildFly server was reconciled to the state the pod status corresponds with namespace. Let's scale it down.",
+	ctrl.Log.Info("WildFly server was reconciled to the state the pod status corresponds with namespace. Let's scale it down.",
 		"WildflyServer", wildflyServer)
 	wildflyServer.Spec.Replicas = 0
 	err := cl.Update(context.TODO(), wildflyServer)
@@ -194,10 +197,14 @@ func TestRecoveryScaleDownToPodInvestigation(t *testing.T) {
 }
 
 func TestRecoveryScaleDown(t *testing.T) {
+	// Set the logger to development mode for verbose logs.
+	ctrl.SetLogger(zap.New(zap.UseDevMode(true)))
+	assert = testifyAssert.New(t)
+
 	wildflyServer := defaultWildflyServerDefinition.DeepCopy()
 	setupBeforeScaleDown(t, wildflyServer, 1)
 
-	log.Info("WildFly server was reconciled, let's scale it down.", "WildflyServer", wildflyServer)
+	ctrl.Log.Info("WildFly server was reconciled, let's scale it down.", "wildflyServer", wildflyServer)
 	wildflyServer.Spec.Replicas = 0
 	err := cl.Update(context.TODO(), wildflyServer)
 
@@ -270,7 +277,7 @@ func TestSkipRecoveryScaleDownWhenNoTxnSubsystem(t *testing.T) {
 	wildflyServer := defaultWildflyServerDefinition.DeepCopy()
 	setupBeforeScaleDown(t, wildflyServer, 1)
 
-	log.Info("WildFly server was reconciled, let's scale it down.", "WildflyServer", wildflyServer)
+	ctrl.Log.Info("WildFly server was reconciled, let's scale it down.", "WildflyServer", wildflyServer)
 	wildflyServer.Spec.Replicas = 0
 	err := cl.Update(context.TODO(), wildflyServer)
 
@@ -304,7 +311,7 @@ func TestSkipRecoveryScaleDownWhenEmptyDirStorage(t *testing.T) {
 	wildflyServer.Spec.Storage.EmptyDir = &corev1.EmptyDirVolumeSource{} // define emptydir which refuses the claim to be used
 	setupBeforeScaleDown(t, wildflyServer, 1)
 
-	log.Info("WildFly server was reconciled, let's scale it down.", "WildflyServer", wildflyServer)
+	ctrl.Log.Info("WildFly server was reconciled, let's scale it down.", "WildflyServer", wildflyServer)
 	wildflyServer.Spec.Replicas = 0
 	err := cl.Update(context.TODO(), wildflyServer)
 
@@ -369,7 +376,7 @@ func (rops *remoteOpsMock) Execute(pod *corev1.Pod, command string) (string, err
 		}
 		rops.ExecuteMockReturn = rops.ExecuteMockReturn[1:] // dequeuing, removal of the first item
 	}
-	log.Info("remoteOpsMock.Execute command:'" + command + "',  returns: '" + stringToReturn + "'")
+	ctrl.Log.Info("remoteOpsMock.Execute command:'" + command + "',  returns: '" + stringToReturn + "'")
 	return stringToReturn, nil
 }
 func (rops remoteOpsMock) SocketConnect(hostname string, port int32, command string) (string, error) {
