@@ -661,6 +661,56 @@ func TestWildFlyServerWithDefaultHttpProbes(t *testing.T) {
 	// By default, Startup probe is not defined in the StatefulSet
 	assert.Nil(statefulSet.Spec.Template.Spec.Containers[0].StartupProbe)
 
+	// Update the CR adding just an StartupProbe Configuration
+	startupProbe := &wildflyv1alpha1.ProbeSpec{
+		InitialDelaySeconds: 65,
+		TimeoutSeconds:      55,
+		PeriodSeconds:       75,
+		SuccessThreshold:    85,
+		FailureThreshold:    10,
+	}
+
+	wildflyServer.Spec.StartupProbe = startupProbe
+
+	wildflyServer.SetGeneration(wildflyServer.GetGeneration() + 1)
+	err = cl.Update(context.TODO(), wildflyServer)
+	t.Logf("WildFlyServerSpec generation %d", wildflyServer.GetGeneration())
+	require.NoError(t, err)
+
+	_, err = reconcileUntilDone(t, r, req, 10)
+
+	statefulSet = &appsv1.StatefulSet{}
+	err = cl.Get(context.TODO(), req.NamespacedName, statefulSet)
+	require.NoError(t, err)
+
+	// check the Probes values
+	stsLivenessProbe = statefulSet.Spec.Template.Spec.Containers[0].LivenessProbe
+	assert.Equal(int32(60), stsLivenessProbe.InitialDelaySeconds)
+	assert.Equal(int32(0), stsLivenessProbe.TimeoutSeconds)
+	assert.Equal(int32(0), stsLivenessProbe.PeriodSeconds)
+	assert.Equal(int32(0), stsLivenessProbe.SuccessThreshold)
+	assert.Equal(int32(0), stsLivenessProbe.FailureThreshold)
+	assert.Equal("/health/live", stsLivenessProbe.HTTPGet.Path)
+	assert.Equal("admin", stsLivenessProbe.HTTPGet.Port.StrVal)
+
+	stsReadinessProbe = statefulSet.Spec.Template.Spec.Containers[0].ReadinessProbe
+	assert.Equal(int32(10), stsReadinessProbe.InitialDelaySeconds)
+	assert.Equal(int32(0), stsReadinessProbe.TimeoutSeconds)
+	assert.Equal(int32(0), stsReadinessProbe.PeriodSeconds)
+	assert.Equal(int32(0), stsReadinessProbe.SuccessThreshold)
+	assert.Equal(int32(0), stsReadinessProbe.FailureThreshold)
+	assert.Equal("/health/ready", stsReadinessProbe.HTTPGet.Path)
+	assert.Equal("admin", stsReadinessProbe.HTTPGet.Port.StrVal)
+
+	stsStartupProbe := statefulSet.Spec.Template.Spec.Containers[0].StartupProbe
+	assert.Equal(int32(65), stsStartupProbe.InitialDelaySeconds)
+	assert.Equal(int32(55), stsStartupProbe.TimeoutSeconds)
+	assert.Equal(int32(75), stsStartupProbe.PeriodSeconds)
+	assert.Equal(int32(85), stsStartupProbe.SuccessThreshold)
+	assert.Equal(int32(10), stsStartupProbe.FailureThreshold)
+	assert.Equal("/health/live", stsStartupProbe.HTTPGet.Path)
+	assert.Equal("admin", stsStartupProbe.HTTPGet.Port.StrVal)
+
 	// Update the CR configuring values for the Probes
 	livenessProbe := &wildflyv1alpha1.ProbeSpec{
 		InitialDelaySeconds: 10,
@@ -678,7 +728,7 @@ func TestWildFlyServerWithDefaultHttpProbes(t *testing.T) {
 		FailureThreshold:    29,
 	}
 
-	startupProbe := &wildflyv1alpha1.ProbeSpec{
+	startupProbe = &wildflyv1alpha1.ProbeSpec{
 		InitialDelaySeconds: 30,
 		TimeoutSeconds:      345,
 		PeriodSeconds:       35,
@@ -719,7 +769,7 @@ func TestWildFlyServerWithDefaultHttpProbes(t *testing.T) {
 	assert.Equal("/health/ready", stsReadinessProbe.HTTPGet.Path)
 	assert.Equal("admin", stsReadinessProbe.HTTPGet.Port.StrVal)
 
-	stsStartupProbe := statefulSet.Spec.Template.Spec.Containers[0].StartupProbe
+	stsStartupProbe = statefulSet.Spec.Template.Spec.Containers[0].StartupProbe
 	assert.Equal(int32(30), stsStartupProbe.InitialDelaySeconds)
 	assert.Equal(int32(345), stsStartupProbe.TimeoutSeconds)
 	assert.Equal(int32(35), stsStartupProbe.PeriodSeconds)
