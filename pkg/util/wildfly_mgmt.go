@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"strings"
 
 	"github.com/go-logr/logr"
@@ -56,8 +57,10 @@ func IsMgmtOutcomeSuccesful(jsonBody map[string]interface{}) bool {
 //	the execution runs as shh remote command with jboss-cli.sh executed on the pod
 //	returns the JSON as the return value from the operation
 func ExecuteMgmtOp(pod *corev1.Pod, mgmtOpString string) (map[string]interface{}, error) {
+	mgtOpsLog := logf.Log.WithName("ExecuteMgmtOp")
 	jbossCliCommand := fmt.Sprintf("${JBOSS_HOME}/bin/jboss-cli.sh --output-json -c --commands='%s'", mgmtOpString)
 	resString, err := RemoteOps.Execute(pod, jbossCliCommand)
+	mgtOpsLog.Info("management operation executed", "mgmtOpString", mgmtOpString, "result", resString)
 	if err != nil && resString == "" {
 		return nil, fmt.Errorf("Cannot execute JBoss CLI command %s at pod %v. Cause: %v", jbossCliCommand, pod.Name, err)
 	}
@@ -82,6 +85,7 @@ func ExecuteMgmtOp(pod *corev1.Pod, mgmtOpString string) (map[string]interface{}
 		return nil, fmt.Errorf("Cannot decode JBoss CLI '%s' executed on pod %v return data '%v' to JSON. Cause: %v",
 			jbossCliCommand, pod.Name, resString, err)
 	}
+	mgtOpsLog.Info("Returning", "result", jsonBody)
 	return jsonBody, nil
 }
 
