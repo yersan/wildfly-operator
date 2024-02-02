@@ -108,6 +108,7 @@ func (r *WildFlyServerReconciler) checkRecovery(reqLogger logr.Logger, scaleDown
 	_, err = wfly.RemoteOps.SocketConnect(scaleDownPodIP, scaleDownPodRecoveryPort, txnRecoveryScanCommand)
 	if err != nil {
 		patch := client.MergeFrom(scaleDownPod.DeepCopy())
+		reqLogger.Info("deleting the markerRecoveryPort annotation")
 		delete(scaleDownPod.Annotations, markerRecoveryPort)
 		if errUpdate := r.Client.Patch(context.TODO(), scaleDownPod, patch); errUpdate != nil {
 			reqLogger.Info("Cannot update scaledown pod while resetting the recovery port annotation",
@@ -116,6 +117,7 @@ func (r *WildFlyServerReconciler) checkRecovery(reqLogger logr.Logger, scaleDown
 		return false, "", fmt.Errorf("Failed to run transaction recovery scan for scaling down pod %v. "+
 			"Please, verify the pod log file. Error: %v", scaleDownPodName, err)
 	}
+	reqLogger.Info("No error on recovery scan => all the registered resources were available during the recovery processing")
 	// No error on recovery scan => all the registered resources were available during the recovery processing
 	foundLogLine, err := wfly.RemoteOps.VerifyLogContainsRegexp(scaleDownPod, scaleDownPodLogTimestampAtStart, recoveryErrorRegExp)
 	if err != nil {
@@ -126,19 +128,23 @@ func (r *WildFlyServerReconciler) checkRecovery(reqLogger logr.Logger, scaleDown
 			"Pod name: %v, log line with error '%v'", scaleDownPod, foundLogLine)
 		return false, retString, nil
 	}
+	reqLogger.Info("Probing transaction log to verify there is not in-doubt transaction in the log")
 	// Probing transaction log to verify there is not in-doubt transaction in the log
 	_, err = wfly.ExecuteMgmtOp(scaleDownPod, wfly.MgmtOpTxnProbe)
 	if err != nil {
 		return false, "", fmt.Errorf("Error in probing transaction log for scaling down pod %v, error: %v", scaleDownPodName, err)
 	}
+	reqLogger.Info("Transaction log was probed, now we read the set of transactions which are in-doubt")
 	// Transaction log was probed, now we read the set of transactions which are in-doubt
 	jsonResult, err := wfly.ExecuteMgmtOp(scaleDownPod, wfly.MgmtOpTxnRead)
 	if err != nil {
 		return false, "", fmt.Errorf("Cannot read transactions from the transaction log for pod scaling down %v, error: %v", scaleDownPodName, err)
 	}
+	reqLogger.Info("pod response after query for transactions", "jsonResult", jsonResult)
 	if !wfly.IsMgmtOutcomeSuccesful(jsonResult) {
 		return false, "", fmt.Errorf("Cannot get list of the in-doubt transactions at pod %v for transaction scaledown", scaleDownPodName)
 	}
+
 	// Is the number of in-doubt transactions equal to zero?
 	transactions := jsonResult["result"]
 	txnMap, isMap := transactions.(map[string]interface{}) // typing the variable to be a map of interfaces
