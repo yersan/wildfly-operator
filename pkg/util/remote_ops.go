@@ -73,6 +73,7 @@ func (RemoteOperationsStruct) Execute(pod *corev1.Pod, command string) (string, 
 	// this case, we'll run a remote shell.
 	req := coreclient.RESTClient().
 		Post().
+		SetHeader("Cache-Control", "must-revalidate,no-cache,no-store").
 		Namespace(pod.Namespace).
 		Name(pod.Name).
 		Resource("pods").
