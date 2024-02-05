@@ -8,6 +8,7 @@ import (
 	"io"
 	"net"
 	"regexp"
+	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"time"
 
 	corev1 "k8s.io/api/core/v1"
@@ -50,6 +51,7 @@ func init() {
 
 // Execute executes a command inside the remote pod
 func (RemoteOperationsStruct) Execute(pod *corev1.Pod, command string) (string, error) {
+	remoteCmdLog := logf.Log.WithName("RemoteCmd")
 	var (
 		execOut bytes.Buffer
 		execErr bytes.Buffer
@@ -87,6 +89,7 @@ func (RemoteOperationsStruct) Execute(pod *corev1.Pod, command string) (string, 
 			// TTY:       true,
 		}, scheme.ParameterCodec)
 
+	remoteCmdLog.Info("URL Command", "URL", req.URL().String())
 	exec, err := remotecommand.NewSPDYExecutor(restconfig, "POST", req.URL())
 	if err != nil {
 		return "", err
