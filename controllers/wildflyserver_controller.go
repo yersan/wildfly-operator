@@ -124,6 +124,32 @@ func (r *WildFlyServerReconciler) Reconcile(ctx context.Context, request ctrl.Re
 	numberOfDeployedPods := int32(len(podList.Items))
 	numberOfPodsToScaleDown := statefulsetSpecSize - wildflyServerSpecSize // difference between desired pod count and the current number of pods
 
+	// If there are pods clean and have been removed, remove the status now
+Outer:
+	for index, v := range wildflyServer.Status.Pods {
+		if v.State == wildflyv1alpha1.PodStateScalingDownClean {
+			for _, pv := range podList.Items {
+				if pv.Name == v.Name {
+					continue Outer
+				}
+			}
+			patch := client.MergeFrom(wildflyServer.DeepCopy())
+			wildflyServer.Status.Pods = removeItem(wildflyServer.Status.Pods, index)
+			if wildflyServer.Status.Replicas > 0 {
+				wildflyServer.Status.Replicas--
+			}
+			if wildflyServer.Status.ScalingdownPods > 0 {
+				wildflyServer.Status.ScalingdownPods--
+			}
+
+			if err := r.Client.Status().Patch(context.Background(), wildflyServer, patch); err != nil {
+				log.Error(err, "Failed to update WildFlyServer status.")
+				return reconcile.Result{}, err
+			}
+			return reconcile.Result{Requeue: true}, nil
+		}
+	}
+
 	// if the number of desired replica size (aka. WildflyServer.Spec.Replicas) is different from the number of active pods
 	//  and the statefulset replica size was already changed to follow the value defined by the wildflyserver spec then wait for sts to reconcile
 	if statefulsetSpecSize == wildflyServerSpecSize && numberOfDeployedPods != wildflyServerSpecSize {
@@ -547,4 +573,8 @@ func hasServiceMonitor() bool {
 		Version: monitoringv1.Version,
 		Kind:    monitoringv1.ServiceMonitorsKind,
 	})
+}
+
+func removeItem(slice []wildflyv1alpha1.PodStatus, index int) []wildflyv1alpha1.PodStatus {
+	return append(slice[:index], slice[index+1:]...)
 }
