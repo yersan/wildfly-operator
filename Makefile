@@ -141,22 +141,46 @@ vet: ## Run go vet against code.
 unit-test: generate openapi fmt vet ## Run unit-tests.
 	go test -v $(shell go list ./... | grep -v /test/) -coverprofile cover.out
 
-.PHONY: test # Needs a cluster running and with a admin user logged in
-test: clean manifests generate fmt vet controller-gen ## Run tests.
+.PHONY: test
+test: clean manifests generate fmt vet controller-gen ## Runs end-to-end (e2e) tests using the Operator in local mode. Requires a running cluster with an admin user already logged in. Images used by the testsuite must be manually built and pushed to the cluster.
 	go test -v ./test/e2e/... -v -ginkgo.v
 
-.PHONY: debug-test # Needs a cluster running and with a admin user logged in
-debug-test: clean manifests generate fmt vet controller-gen dlv ## Run tests.
+.PHONY: debug-test
+debug-test: clean manifests generate fmt vet controller-gen dlv ## Runs end-to-end (e2e) tests using the Operator in local mode with debugging enabled. Requires a running cluster with an admin user already logged in. Images used by the testsuite must be manually built and pushed to the cluster.
 	./bin/dlv test --listen=:2345 --headless=true --api-version=2 --accept-multiclient ./test/e2e/...
 
 .PHONY: test-e2e
-test-e2e: prepare-test-e2e run-test-e2e ## Used By CI.
+test-e2e: prepare-test-e2e run-test-e2e ## Runs end-to-end (e2e) tests using the Operator in deployment mode. Requires a running cluster with an admin user already logged in. Images used by the testsuite must be manually built and pushed to the cluster.
 
-## Run E2E tests running the Operator as a Deployment inside a local minikube cluster installation.
 .PHONY: test-e2e-minikube
-test-e2e-minikube: prepare-test-e2e
+# User by CI testing
+test-e2e-minikube: clean prepare-test-e2e ## Runs end-to-end (e2e) tests using the Operator in deployment mode. Requires a Minikube running cluster with an admin user already logged in.
+	echo "Start image registry"
 	docker run -d -p 5000:5000 --restart=always --name image-registry registry || true
-	IMG="localhost:5000/wildfly-operator:latest" make docker-build docker-push run-test-e2e
+	IP=$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' image-registry)
+
+	echo "Building the Operator image ${IP}"
+	IMG="localhost:5000/wildfly/wildfly-operator" make docker-build docker-push
+	minikube image load localhost:5000/wildfly/wildfly-operator
+
+	echo "Building images for testing"
+	bash ./config/tests/build-test-images.sh
+	docker tag wildfly/wildfly-test-image localhost:5000/wildfly/wildfly-test-image:0.0
+	docker push localhost:5000/wildfly/wildfly-test-image:0.0
+	docker tag wildfly/bootable-jar-test-image localhost:5000/wildfly/bootable-jar-test-image:0.0
+	docker push localhost:5000/wildfly/bootable-jar-test-image:0.0
+	docker tag wildfly/clusterbench-test-image localhost:5000/wildfly/clusterbench-test-image:0.0
+	docker push localhost:5000/wildfly/clusterbench-test-image:0.0
+
+	echo "Pushing images to Minikube"
+	minikube image load localhost:5000/wildfly/wildfly-test-image:0.0
+	minikube image load localhost:5000/wildfly/bootable-jar-test-image:0.0
+	minikube image load localhost:5000/wildfly/clusterbench-test-image:0.0
+
+	echo "Running the testsuite"
+	IMG="localhost:5000/wildfly/wildfly-operator" make run-test-e2e
+	docker container stop image-registry
+	docker container rm image-registry
 
 .PHONY: prepare-test-e2e
 prepare-test-e2e: manifests generate fmt vet kustomize
@@ -366,3 +390,4 @@ $(OPENAPI_GEN): $(LOCALBIN)
 dlv: $(DLV) ## Download envtest-setup locally if necessary.
 $(DLV): $(LOCALBIN)
 	test -s $(LOCALBIN)/dlv || GOBIN=$(LOCALBIN) go install github.com/go-delve/delve/cmd/dlv@latest
+
