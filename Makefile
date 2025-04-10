@@ -155,27 +155,23 @@ test-e2e: prepare-test-e2e run-test-e2e ## Runs end-to-end (e2e) tests using the
 .PHONY: test-e2e-minikube
 # User by CI testing
 test-e2e-minikube: clean prepare-test-e2e ## Runs end-to-end (e2e) tests using the Operator in deployment mode. Requires a Minikube running cluster with an admin user already logged in.
-	echo "Start image registry"
-	docker run -d -p 5000:5000 --restart=always --name image-registry registry || true
-	IP=$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' image-registry)
-
-	echo "Building the Operator image ${IP}"
-	IMG="localhost:5000/wildfly/wildfly-operator" make docker-build docker-push
-	minikube image load localhost:5000/wildfly/wildfly-operator
+	echo "Building the Operator image"
+	IMG="localhost:5000/wildfly/wildfly-operator" make docker-build
+#	minikube image load localhost:5000/wildfly/wildfly-operator
 
 	echo "Building images for testing"
 	bash ./config/tests/build-test-images.sh
 	docker tag wildfly/wildfly-test-image localhost:5000/wildfly/wildfly-test-image:0.0
-	docker push localhost:5000/wildfly/wildfly-test-image:0.0
+#	docker push localhost:5000/wildfly/wildfly-test-image:0.0
 	docker tag wildfly/bootable-jar-test-image localhost:5000/wildfly/bootable-jar-test-image:0.0
-	docker push localhost:5000/wildfly/bootable-jar-test-image:0.0
+#	docker push localhost:5000/wildfly/bootable-jar-test-image:0.0
 	docker tag wildfly/clusterbench-test-image localhost:5000/wildfly/clusterbench-test-image:0.0
-	docker push localhost:5000/wildfly/clusterbench-test-image:0.0
+#	docker push localhost:5000/wildfly/clusterbench-test-image:0.0
 
-	echo "Pushing images to Minikube"
-	minikube image load localhost:5000/wildfly/wildfly-test-image:0.0
-	minikube image load localhost:5000/wildfly/bootable-jar-test-image:0.0
-	minikube image load localhost:5000/wildfly/clusterbench-test-image:0.0
+#	echo "Pushing images to Minikube"
+#	minikube image load localhost:5000/wildfly/wildfly-test-image:0.0
+#	minikube image load localhost:5000/wildfly/bootable-jar-test-image:0.0
+#	minikube image load localhost:5000/wildfly/clusterbench-test-image:0.0
 
 	echo "Running the testsuite"
 	IMG="localhost:5000/wildfly/wildfly-operator" make run-test-e2e
