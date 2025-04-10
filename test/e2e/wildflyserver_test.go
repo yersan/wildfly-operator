@@ -94,7 +94,7 @@ var _ = Describe("WildFly Server tests", func() {
 	})
 
 	It("WildFlyServer can be created and scaled up", func() {
-		applicationImage := "localhost:5000/wildfly/wildfly-test-image:0.0"
+		applicationImage := "wildfly/wildfly-test-image:0.0"
 		name := "example-wildfly"
 		ctx := context.Background()
 
@@ -114,7 +114,7 @@ var _ = Describe("WildFly Server tests", func() {
 	})
 
 	It("WildFlyServer packaged as a Bootable JAR can be created and scaled up", func() {
-		applicationImage := "localhost:5000/wildfly/bootable-jar-test-image:0.0"
+		applicationImage := "wildfly/bootable-jar-test-image:0.0"
 		name := "example-wildfly-bootable-jar"
 		ctx := context.Background()
 
@@ -133,7 +133,7 @@ var _ = Describe("WildFly Server tests", func() {
 	})
 
 	It("WildFlyServer can form a cluster", func() {
-		applicationImage := "localhost:5000/wildfly/clusterbench-test-image:0.0"
+		applicationImage := "wildfly/clusterbench-test-image:0.0"
 		name := "cluster-bench"
 		ctx := context.Background()
 
@@ -173,7 +173,7 @@ var _ = Describe("WildFly Server tests", func() {
 			Skip("Skipping this test. It cannot be tested with local manager.")
 		}
 
-		applicationImage := "localhost:5000/wildfly/wildfly-test-image:0.0"
+		applicationImage := "wildfly/wildfly-test-image:0.0"
 		name := "wildfly-server-scale-down"
 		ctx := context.Background()
 
@@ -207,7 +207,7 @@ var _ = Describe("WildFly Server tests", func() {
 	})
 
 	It("WildFlyServer Data directory from JBOSS_HOME environment value contains kernel directory", func() {
-		applicationImage := "localhost:5000/wildfly/wildfly-test-image:0.0"
+		applicationImage := "wildfly/wildfly-test-image:0.0"
 		name := "example-wildfly"
 		ctx := context.Background()
 

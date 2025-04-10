@@ -27,7 +27,8 @@ cd "${QUICKSTART_REPO_DIR}" && git checkout ${QUICKSTART_BRANCH}
 
 echo "Building quickstart image"
 cd "${QUICKSTART_REPO_DIR}"/${QUICKSTART} && mvn -Popenshift package wildfly:image \
--Dwildfly.image.name=wildfly/wildfly-test-image
+-Dwildfly.image.name=wildfly/wildfly-test-image \
+-Dwildfly.image.tag=0.0
 
 echo "Cloning Bootable JAR Maven plugin repo"
 rm -rf "${BOOTABLE_JAR_REPO_DIR}"
@@ -49,7 +50,7 @@ WORKDIR /deployments
 COPY microprofile-config-bootable.jar /deployments/microprofile-config-bootable.jar
 ENTRYPOINT ["sh", "-c", "java \$JAVA_OPTIONS -jar /deployments/microprofile-config-bootable.jar \$JAVA_ARGS"]
 EOF
-docker build . -t wildfly/bootable-jar-test-image
+docker build . -t wildfly/bootable-jar-test-image:0.0
 
 echo "Cloning Clusterbench repo"
 rm -rf "${CLUSTER_BENCH_REPO_DIR}"
@@ -59,4 +60,5 @@ cd "${CLUSTER_BENCH_REPO_DIR}" && git checkout ${CLUSTER_BENCH_BRANCH}
 echo "Building Clusterbench repo"
 cd "${CLUSTER_BENCH_REPO_DIR}" && git checkout ${CLUSTER_BENCH_BRANCH}
 cd "${CLUSTER_BENCH_REPO_DIR}/${CLUSTER_BENCH}" && mvn -Popenshift package wildfly:image \
--Dwildfly.image.name=wildfly/clusterbench-test-image
+-Dwildfly.image.name=wildfly/clusterbench-test-image \
+-Dwildfly.image.tag=0.0

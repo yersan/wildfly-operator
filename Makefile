@@ -156,27 +156,13 @@ test-e2e: prepare-test-e2e run-test-e2e ## Runs end-to-end (e2e) tests using the
 # User by CI testing
 test-e2e-minikube: clean prepare-test-e2e ## Runs end-to-end (e2e) tests using the Operator in deployment mode. Requires a Minikube running cluster with an admin user already logged in.
 	echo "Building the Operator image"
-	IMG="localhost:5000/wildfly/wildfly-operator" make docker-build
-#	minikube image load localhost:5000/wildfly/wildfly-operator
+	IMG="wildfly/wildfly-operator-test-image" make docker-build
 
 	echo "Building images for testing"
 	bash ./config/tests/build-test-images.sh
-	docker tag wildfly/wildfly-test-image localhost:5000/wildfly/wildfly-test-image:0.0
-#	docker push localhost:5000/wildfly/wildfly-test-image:0.0
-	docker tag wildfly/bootable-jar-test-image localhost:5000/wildfly/bootable-jar-test-image:0.0
-#	docker push localhost:5000/wildfly/bootable-jar-test-image:0.0
-	docker tag wildfly/clusterbench-test-image localhost:5000/wildfly/clusterbench-test-image:0.0
-#	docker push localhost:5000/wildfly/clusterbench-test-image:0.0
-
-#	echo "Pushing images to Minikube"
-#	minikube image load localhost:5000/wildfly/wildfly-test-image:0.0
-#	minikube image load localhost:5000/wildfly/bootable-jar-test-image:0.0
-#	minikube image load localhost:5000/wildfly/clusterbench-test-image:0.0
 
 	echo "Running the testsuite"
-	IMG="localhost:5000/wildfly/wildfly-operator" make run-test-e2e
-	docker container stop image-registry
-	docker container rm image-registry
+	IMG="wildfly/wildfly-operator-test-image" make run-test-e2e
 
 .PHONY: prepare-test-e2e
 prepare-test-e2e: manifests generate fmt vet kustomize
