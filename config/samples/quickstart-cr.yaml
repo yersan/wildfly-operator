@@ -4,4 +4,9 @@ metadata:
   name: quickstart
 spec:
   applicationImage: "quay.io/wildfly-quickstarts/wildfly-operator-quickstart:18.0"
-  replicas: 2
+  replicas: 1
+  livenessProbe:
+    failureThreshold: 2
+  readinessProbe:
+    initialDelaySeconds: 12
+  startupProbe:
